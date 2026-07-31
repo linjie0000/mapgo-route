@@ -138,6 +138,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
       <div class="mc" data-m="walking" onclick="setMode('walking')">步行</div>
       <div class="mc" data-m="riding" onclick="setMode('riding')">骑行</div>
     </div>
+    <div class="grp"><label>城市</label><div class="iwrap"><span class="ic">🏙</span><input id="cityIpt" placeholder="如：广州（提高地名识别准确度）"></div></div>
     <div class="grp"><label>起点</label>
       <div class="iwrap"><span class="ic">📍</span><input id="fromIpt" placeholder="输入起点（留空则用当前位置）" oninput="onAC('from')"><button class="xb" onclick="clr('from')">×</button></div>
     </div>
@@ -148,7 +149,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
       <div class="collapse-hd" onclick="toggleC('wp')">▶ 途经点（可选）</div>
       <div class="collapse-bd" id="wp"><div id="wpList"></div><button class="b bo bs" onclick="addWP()">+ 添加途经点</button></div>
     </div>
-    <div id="citySec" style="display:none"><div class="grp"><label>城市</label><div class="iwrap"><span class="ic">🏙</span><input id="cityIpt" placeholder="如：北京"></div></div></div>
+    <div id="citySec" style="display:none"></div>
     <div>
       <div class="collapse-hd" onclick="toggleC('adv')">▶ 高级选项</div>
       <div class="collapse-bd sel" id="adv">
@@ -229,7 +230,7 @@ window.onload=function(){
 };
 
 // ==================== Geocoder 地理编码（地名→坐标）====================
-// 使用高德 REST API 替代 JSAPI 插件（JSAPI 插件在某些域名下回调不触发）
+// 使用高德 REST API 替代 JSAPI 插件
 function geocode(address,city){
   return new Promise(function(resolve,reject){
     if(!address){resolve(null);return}
@@ -239,27 +240,7 @@ function geocode(address,city){
       resolve(new A.LngLat(parseFloat(parts[0]),parseFloat(parts[1])));
       return;
     }
-    // 尝试从地图中心获取城市
-    var cityParam=city||'';
-    if(!cityParam&&map){
-      try{
-        var center=map.getCenter();
-        // 用逆地理编码获取当前城市
-        fetch('https://restapi.amap.com/v3/geocode/regeo?key='+KEY+'&location='+center.lng.toFixed(6)+','+center.lat.toFixed(6)+'&extensions=base')
-          .then(function(r){return r.json()}).then(function(data){
-            if(data.status==='1'&&data.regeocode){
-              cityParam=data.regeocode.addressComponent.city||data.regeocode.addressComponent.province||'';
-            }
-            doGeocode(address,cityParam,resolve,reject);
-          }).catch(function(){
-            doGeocode(address,'',resolve,reject);
-          });
-      }catch(e){
-        doGeocode(address,'',resolve,reject);
-      }
-    }else{
-      doGeocode(address,cityParam,resolve,reject);
-    }
+    doGeocode(address,city||'',resolve,reject);
   });
 }
 function doGeocode(address,city,resolve,reject){
@@ -333,7 +314,6 @@ function setMode(m){
   document.querySelectorAll('.mc').forEach(function(e){e.classList.remove('on')});
   document.querySelector('.mc[data-m="'+m+'"]').classList.add('on');
   document.getElementById('wpSec').style.display=m==='driving'?'block':'none';
-  document.getElementById('citySec').style.display=m==='transit'?'block':'none';
   document.getElementById('dPolicy').style.display=m==='driving'?'block':'none';
   document.getElementById('tPolicy').style.display=m==='transit'?'block':'none';
 }
@@ -363,6 +343,7 @@ function doRoute(){
   var fromStr=document.getElementById('fromIpt').value.trim();
   var toStr=document.getElementById('toIpt').value.trim();
   if(!toStr){toast('请输入终点');return}
+  var city=document.getElementById('cityIpt').value.trim();
   document.getElementById('routeRes').innerHTML='<div style="text-align:center;padding:12px"><div class="spin" style="margin:0 auto 8px"></div><div style="font-size:13px;color:var(--txt2)">路线规划中...</div></div>';
 
   // 先把起点/终点/途经点全部 geocode
@@ -370,13 +351,13 @@ function doRoute(){
   var fromPos=null,toPos=null,wpPositions=[];
 
   if(fromStr){
-    tasks.push(geocode(fromStr).then(function(p){fromPos=p}));
+    tasks.push(geocode(fromStr,city).then(function(p){fromPos=p}));
   }
-  tasks.push(geocode(toStr).then(function(p){toPos=p}));
+  tasks.push(geocode(toStr,city).then(function(p){toPos=p}));
   var wpEls=document.querySelectorAll('.wp-row input');
   wpEls.forEach(function(el){
     var v=el.value.trim();
-    if(v) tasks.push(geocode(v).then(function(p){wpPositions.push(p)}));
+    if(v) tasks.push(geocode(v,city).then(function(p){wpPositions.push(p)}));
   });
 
   Promise.all(tasks).then(function(){
@@ -436,7 +417,7 @@ function rRideRest(from,to){
 // 公交 - REST API
 function rTransRest(from,to){
   var city=document.getElementById('cityIpt').value.trim();
-  if(!city){toast('公交模式请输入城市');document.getElementById('routeRes').innerHTML='';return}
+  if(!city){toast('请输入城市');document.getElementById('routeRes').innerHTML='';return}
   var pol=parseInt(document.getElementById('tPolSel').value);
   var url='https://restapi.amap.com/v3/direction/transit/integrated?origin='+from+'&destination='+to+'&city='+encodeURIComponent(city)+'&key='+KEY+'&strategy='+pol+'&extensions=all';
   fetch(url).then(function(r){return r.json()}).then(function(data){
