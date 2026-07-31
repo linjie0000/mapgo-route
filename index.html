@@ -238,6 +238,16 @@ window.onload=function(){
   });
 };
 
+// 提取城市名（去掉区/县/镇/街道，只保留城市级别）
+function extractCity(city){
+  if(!city)return '';
+  // 去掉"市"后面的部分：广州市越秀区 → 广州
+  var m=city.match(/^(.+?)(?:市|自治州|地区|盟)/);
+  if(m)return m[1];
+  // 如果本身不含"市"，直接返回（如"广州"）
+  return city.replace(/[市区县镇街道].*$/,'');
+}
+
 // ==================== Geocoder 地理编码（地名→坐标）====================
 // 使用高德 REST API 替代 JSAPI 插件
 function geocode(address,city){
@@ -253,8 +263,10 @@ function geocode(address,city){
   });
 }
 function doGeocode(address,city,resolve,reject){
+  // 提取城市名（去掉区/县/街道，只保留城市级别）
+  var cityParam=extractCity(city);
   var url='https://restapi.amap.com/v3/geocode/geo?address='+encodeURIComponent(address)+'&key='+KEY;
-  if(city)url+='&city='+encodeURIComponent(city);
+  if(cityParam)url+='&city='+encodeURIComponent(cityParam);
   fetch(url).then(function(r){return r.json()}).then(function(data){
     if(data.status==='1'&&data.geocodes&&data.geocodes.length>0){
       var loc=data.geocodes[0].location; // "lng,lat"
@@ -269,8 +281,9 @@ function doGeocode(address,city,resolve,reject){
 }
 // 降级方案1：REST API POI 搜索
 function searchPOI(address,city,resolve,reject){
+  var cityParam=extractCity(city);
   var url='https://restapi.amap.com/v3/place/text?keywords='+encodeURIComponent(address)+'&key='+KEY+'&offset=3';
-  if(city)url+='&city='+encodeURIComponent(city);
+  if(cityParam)url+='&city='+encodeURIComponent(cityParam);
   fetch(url).then(function(r){return r.json()})
     .then(function(data){
       if(data.status==='1'&&data.pois&&data.pois.length>0){
@@ -425,10 +438,11 @@ function rRideRest(from,to){
 
 // 公交 - REST API
 function rTransRest(from,to){
-  var city=document.getElementById('cityIpt').value.trim();
-  if(!city){toast('请输入城市');document.getElementById('routeRes').innerHTML='';return}
+  var cityRaw=document.getElementById('cityIpt').value.trim();
+  var city=extractCity(cityRaw);
+  if(!cityRaw){toast('请输入位置或城市');document.getElementById('routeRes').innerHTML='';return}
   var pol=parseInt(document.getElementById('tPolSel').value);
-  var url='https://restapi.amap.com/v3/direction/transit/integrated?origin='+from+'&destination='+to+'&city='+encodeURIComponent(city)+'&key='+KEY+'&strategy='+pol+'&extensions=all';
+  var url='https://restapi.amap.com/v3/direction/transit/integrated?origin='+from+'&destination='+to+'&city='+encodeURIComponent(city||cityRaw)+'&key='+KEY+'&strategy='+pol+'&extensions=all';
   fetch(url).then(function(r){return r.json()}).then(function(data){
     if(data.status==='1'&&data.route&&data.route.transits&&data.route.transits.length>0){
       renderTransitRest(data.route);
