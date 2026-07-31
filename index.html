@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>MapGo 地图搜索路线</title>
+  <title>MapGo 地图搜索路线 + 旅途热榜</title>
 <style>
 :root{--pri:#1677ff;--pri-l:#e6f0ff;--ok:#52c41a;--warn:#faad14;--err:#ff4d4f;--bg:#f5f5f5;--card:#fff;--txt:#1a1a1a;--txt2:#666;--bd:#e8e8e8;--sh:0 2px 12px rgba(0,0,0,.1)}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -133,6 +133,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
   <div class="tabs">
     <div class="tab on" data-t="route" onclick="switchTab('route')">路线</div>
     <div class="tab" data-t="search" onclick="switchTab('search')">搜索</div>
+    <div class="tab" data-t="hot" onclick="switchTab('hot')">热榜</div>
   </div>
 
   <div class="body" id="pRoute">
@@ -306,7 +307,9 @@ function switchTab(t){
   document.querySelector('.tab[data-t="'+t+'"]').classList.add('on');
   document.getElementById('pRoute').style.display=t==='route'?'block':'none';
   document.getElementById('pSearch').style.display=t==='search'?'block':'none';
+  document.getElementById('pHot').style.display=t==='hot'?'block':'none';
   var p=document.getElementById('pnl');if(p.classList.contains('hide'))togPnl();
+  if(t==='hot')initHotTags();
 }
 function togPnl(){var p=document.getElementById('pnl'),b=document.getElementById('pnlTog');p.classList.toggle('hide');b.textContent=p.classList.contains('hide')?'▶':'◀'}
 
@@ -624,6 +627,157 @@ function setTo(n){document.getElementById('toIpt').value=n;switchTab('route');to
 // 地图视角控制
 function setStyle(s){if(!map)return;curStyle=s;map.setMapStyle('amap://styles/'+s);toast('已切换样式')}
 
+// ==================== 旅途热榜 ====================
+var CITY_DB={
+'成都':{food:[{n:'冒椒火辣(奎星楼街店)',d:'宽窄巷子旁冷锅串串天花板，人均50+天天爆满',h:'99+万浏览'},{n:'麓山火锅',d:'牛油锅底浓郁醇厚，菜品创新，本地老饕首选',h:'85万浏览'},{n:'小龙坎春熙路旗舰店',d:'春熙路地标火锅，小红书刷屏市井烟火气',h:'78万浏览'},{n:'马路边边麻辣烫',d:'成都麻辣烫代名词，抖音探店必拍',h:'65万浏览'},{n:'甘食记肥肠粉',d:'百年老字号，肥肠粉+锅盔黄金搭档',h:'52万浏览'},{n:'饕林餐厅',d:'本地人认证川菜馆，豆瓣鱼必点',h:'48万浏览'}],scenic:[{n:'大熊猫繁育研究基地',d:'看花花排3小时也值得，成都必打卡TOP1',h:'120万浏览'},{n:'宽窄巷子',d:'百年老街新韵，川剧变脸+小吃一条龙',h:'95万浏览'},{n:'武侯祠+锦里',d:'三国文化圣地，锦里古街夜景绝了',h:'82万浏览'},{n:'春熙路+太古里',d:'成都潮流地标，3D裸眼大屏打卡',h:'75万浏览'},{n:'都江堰+青城山',d:'千年水利工程+道教名山，一日游经典',h:'68万浏览'}],hotel:[{n:'成都博舍酒店',d:'太古里核心位置，极简设计+空中花园',h:'60万浏览'},{n:'成都钓鱼台精品酒店',d:'宽窄巷子旁，国风美学天花板',h:'48万浏览'},{n:'成都W酒店',d:'潮人打卡酒店，WET酒吧+元气早餐',h:'38万浏览'}]},
+'北京':{food:[{n:'四季民福烤鸭(故宫店)',d:'故宫角楼旁吃烤鸭，小红书必拍机位',h:'110万浏览'},{n:'南门涮肉',d:'铜锅涮肉老字号，芝麻酱蘸料灵魂',h:'78万浏览'},{n:'牛街清真小吃街',d:'白记年糕+洪记小吃，北京美食集散地',h:'70万浏览'},{n:'局气',d:'京菜网红，蜂窝煤炒饭+兔爷土豆泥',h:'55万浏览'}],scenic:[{n:'故宫博物院',d:'600年紫禁城，必去',h:'200万浏览'},{n:'环球影城',d:'哈利波特+变形金刚，暑假亲子必去',h:'150万浏览'},{n:'八达岭长城',d:'不到长城非好汉，抖音航拍百万赞',h:'120万浏览'},{n:'颐和园',d:'皇家园林，昆明湖划船+佛香阁',h:'90万浏览'}],hotel:[{n:'北京王府井文华东方',d:'紫禁城景观房，故宫角楼尽收眼底',h:'80万浏览'},{n:'北京璞瑄酒店',d:'嘉德艺术中心内，文化酒店天花板',h:'55万浏览'}]},
+'上海':{food:[{n:'光明邨大苑',d:'淮海路排队王，鲜肉月饼+葱油拌面',h:'90万浏览'},{n:'小杨生煎',d:'上海生煎代名词，爆汁一口入魂',h:'65万浏览'},{n:'南翔馒头店',d:'城隍庙百年老店，小笼包发源地',h:'55万浏览'}],scenic:[{n:'上海迪士尼',d:'暑假烟花秀+玲娜贝儿，亲子必去TOP1',h:'180万浏览'},{n:'外滩万国建筑群',d:'东方明珠对岸，魔都明信片机位',h:'130万浏览'},{n:'武康路',d:'法租界梧桐大道，网红咖啡+老洋房',h:'85万浏览'}],hotel:[{n:'上海和平饭店',d:'外滩地标百年酒店，爵士酒吧夜夜笙歌',h:'90万浏览'},{n:'上海养云安缦',d:'千年古樟树+明清古宅，隐世奢华',h:'65万浏览'}]},
+'杭州':{food:[{n:'知味观·味庄',d:'杭帮菜百年老店，西湖醋鱼必点',h:'88万浏览'},{n:'外婆家',d:'杭帮菜性价比之王，茶香肉绝',h:'72万浏览'},{n:'新白鹿餐厅',d:'本地人日常杭帮菜，人均60吃好',h:'58万浏览'}],scenic:[{n:'西湖十景',d:'断桥残雪+雷峰夕照，杭州名片',h:'150万浏览'},{n:'灵隐寺',d:'千年古刹，飞来峰石窟造像',h:'90万浏览'},{n:'西溪湿地',d:'城市绿肺，摇橹船慢生活',h:'65万浏览'}],hotel:[{n:'杭州西湖国宾馆',d:'毛主席住过的国宾馆，西湖一线',h:'70万浏览'},{n:'杭州法云安缦',d:'灵隐寺旁古村落，禅意隐世',h:'55万浏览'}]},
+'重庆':{food:[{n:'珮姐老火锅',d:'重庆火锅名片，牛油九宫格',h:'95万浏览'},{n:'洞亭火锅',d:'防空洞里吃火锅，重庆独一份',h:'65万浏览'},{n:'好又来酸辣粉',d:'解放碑酸辣粉排队30年',h:'52万浏览'}],scenic:[{n:'洪崖洞',d:'千与千寻现实版，夜景封神',h:'130万浏览'},{n:'长江索道',d:'万里长江第一条空中走廊',h:'80万浏览'},{n:'磁器口古镇',d:'千年古镇，陈麻花+毛血旺',h:'65万浏览'}],hotel:[{n:'重庆尼依格罗酒店',d:'IFS高层江景，俯瞰两江',h:'50万浏览'},{n:'重庆洪崖洞民宿',d:'崖壁民宿，推窗见江',h:'32万浏览'}]},
+'西安':{food:[{n:'子午路张记肉夹馍',d:'西安肉夹馍天花板，外酥里嫩',h:'82万浏览'},{n:'回民街马洪小炒泡馍',d:'本地人泡馍首选，手掰更香',h:'68万浏览'}],scenic:[{n:'秦始皇兵马俑',d:'世界第八大奇迹，必去',h:'160万浏览'},{n:'大唐不夜城',d:'不倒翁小姐姐+唐风演艺',h:'110万浏览'},{n:'西安城墙',d:'13公里城墙骑行，俯瞰古都',h:'75万浏览'}],hotel:[{n:'西安W酒店',d:'大唐不夜城旁，潮牌设计',h:'45万浏览'}]},
+'长沙':{food:[{n:'超级文和友',d:'80年代复古风+小龙虾，长沙名片',h:'92万浏览'},{n:'茶颜悦色',d:'长沙奶茶天花板，幽兰拿铁必点',h:'85万浏览'},{n:'费大厨辣椒炒肉',d:'湘菜灵魂，辣椒炒肉封神',h:'50万浏览'}],scenic:[{n:'橘子洲',d:'毛爷爷青年艺术雕塑，长沙地标',h:'100万浏览'},{n:'岳麓山',d:'四大书院+爱晚亭，秋枫红遍',h:'70万浏览'}],hotel:[{n:'长沙W酒店',d:'湘江边潮牌酒店，夜景绝',h:'45万浏览'}]},
+'广州':{food:[{n:'陶陶居',d:'百年茶楼，虾饺+烧鹅双绝',h:'88万浏览'},{n:'点都德',d:'早茶排队王，红米肠+流沙包',h:'72万浏览'},{n:'陈添记鱼皮',d:'巷子里的宝藏，爽鱼皮',h:'45万浏览'}],scenic:[{n:'广州塔(小蛮腰)',d:'460米高空观景，摩天轮',h:'95万浏览'},{n:'沙面岛',d:'欧式建筑群，拍照圣地',h:'60万浏览'}],hotel:[{n:'广州富力丽思卡尔顿',d:'珠江新城核心，江景套房',h:'48万浏览'}]},
+'三亚':{food:[{n:'第一市场海鲜',d:'海鲜砍价+加工一条龙，三亚必体验',h:'80万浏览'},{n:'嗲嗲的椰子鸡',d:'椰子水煮鸡，清甜鲜美三亚味道',h:'60万浏览'}],scenic:[{n:'蜈支洲岛',d:'潜水+环岛电瓶车，海上玻璃海',h:'100万浏览'},{n:'亚特兰蒂斯酒店',d:'水族馆+水上乐园，三亚亲子天花板',h:'95万浏览'}],hotel:[{n:'三亚艾迪逊酒店',d:'海棠湾设计酒店，极简高级感',h:'60万浏览'}]},
+'厦门':{food:[{n:'乌糖沙茶面',d:'厦门沙茶面天花板，排队30年',h:'70万浏览'},{n:'1980烧肉粽',d:'中山路排队王，肉粽+沙茶面',h:'55万浏览'}],scenic:[{n:'鼓浪屿',d:'万国建筑+钢琴之岛，文艺必去',h:'110万浏览'},{n:'环岛路骑行',d:'海岸线骑行，最美海景',h:'48万浏览'}],hotel:[{n:'厦门康莱德酒店',d:'世茂海峡双子塔，海景无敌',h:'50万浏览'}]},
+'南京':{food:[{n:'回味鸭血粉丝',d:'南京早餐灵魂，鸭血+粉丝',h:'68万浏览'},{n:'南京大牌档',d:'金陵小吃集大成，民国风',h:'55万浏览'}],scenic:[{n:'中山陵',d:'392级台阶仰望国父',h:'90万浏览'},{n:'夫子庙+秦淮河',d:'十里秦淮夜景，灯会',h:'75万浏览'}],hotel:[{n:'南京丽思卡尔顿',d:'德基广场，顶层江景',h:'42万浏览'}]},
+'大理':{food:[{n:'再回首凉鸡米线',d:'大理古城必吃，酸辣鲜',h:'55万浏览'},{n:'段公子',d:'白族菜+洱海鱼，特色餐厅',h:'42万浏览'}],scenic:[{n:'洱海环湖',d:'129公里环湖，骑行+自驾',h:'95万浏览'},{n:'大理古城',d:'南诏古国，文艺慢生活',h:'70万浏览'}],hotel:[{n:'大理洱海天域英迪格',d:'洱海边设计酒店，无边泳池',h:'48万浏览'}]}
+};
+var HOT_CITIES=[{n:'成都',e:'🐼'},{n:'北京',e:'🏯'},{n:'上海',e:'🏙'},{n:'杭州',e:'🌸'},{n:'重庆',e:'🌶'},{n:'西安',e:'⚔'},{n:'长沙',e:'🍵'},{n:'广州',e:'🥢'},{n:'厦门',e:'🌊'},{n:'南京',e:'⛰'},{n:'三亚',e:'🌴'},{n:'大理',e:'🏔'}];
+var HOT_TAGS_ARR=['美食推荐','景点攻略','网红酒店','必去打卡','地道小吃'];
+var hotInited=false;
+
+function initHotTags(){
+  if(hotInited)return;hotInited=true;
+  // 热门城市卡片
+  var h='<div style="font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:8px">热门城市</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">';
+  HOT_CITIES.forEach(function(c){h+='<div style="background:var(--bg);border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s" onclick="document.getElementById(\'hotIpt\').value=\''+esc(c.n)+'\';doHotSearch()" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,.08)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'"><div style="font-size:22px;margin-bottom:2px">'+c.e+'</div><div style="font-size:12px;font-weight:600">'+esc(c.n)+'</div></div>';});
+  h+='</div>';
+  // 热门标签
+  h+='<div style="font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:8px">热门搜索</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">';
+  HOT_TAGS_ARR.forEach(function(t){h+='<span style="padding:4px 10px;border-radius:14px;font-size:11px;font-weight:600;border:1px solid var(--bd);background:var(--card);cursor:pointer;transition:all .15s" onclick="document.getElementById(\'hotIpt\').value=\''+esc(t)+'\';doHotSearch()" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\'" onmouseout="this.style.borderColor=\'var(--bd)\';this.style.color=\'var(--txt)\'">'+esc(t)+'</span>';});
+  h+='</div>';
+  h+='<div style="padding:12px;background:var(--bg);border-radius:10px;font-size:12px;color:var(--txt2);line-height:1.8">输入<strong>城市+品类</strong>精准搜索，如：<span style="color:var(--pri)">成都火锅</span> · <span style="color:var(--pri)">杭州景点</span> · <span style="color:var(--pri)">三亚酒店</span></div>';
+  document.getElementById('hotRes').innerHTML=h;
+}
+
+function doHotSearch(){
+  var q=document.getElementById('hotIpt').value.trim();
+  if(!q){initHotTags();return}
+  // 解析城市+分类
+  var city='',cat='';
+  var cityNames=Object.keys(CITY_DB);
+  for(var i=0;i<cityNames.length;i++){if(q.indexOf(cityNames[i])===0){city=cityNames[i];break}}
+  if(!city){
+    // 尝试模糊匹配
+    for(var j=0;j<cityNames.length;j++){if(q.indexOf(cityNames[j])>=0){city=cityNames[j];break}}
+  }
+  if(/美食|吃|火锅|串串|小吃|早餐|宵夜|烧烤|粉|面|餐厅/.test(q))cat='food';
+  else if(/景点|玩|打卡|旅游|公园|寺|古镇|山|海|岛|博物馆/.test(q))cat='scenic';
+  else if(/酒店|住|民宿|宾馆|度假|客栈/.test(q))cat='hotel';
+  var keyword=q;
+  if(city)keyword=q.replace(city,'').trim();
+  if(!cat){if(keyword)cat='food';else cat='food';}
+  var c=document.getElementById('hotRes');
+  if(!city){
+    // 非内置城市，提供小红书/抖音跳转
+    var searchKw=q;
+    c.innerHTML='<div style="text-align:center;padding:30px 20px;color:var(--txt2)"><div style="font-size:40px;margin-bottom:8px">🔍</div><p>暂无"'+esc(q)+'"的内置热榜数据</p><p style="font-size:12px;margin-top:4px">试试搜索小红书或抖音获取实时推荐</p></div>';
+    c.innerHTML+='<div style="display:flex;gap:10px;margin-top:12px"><button class="b bp bk" style="background:#FF2442" onclick="openXHS(\''+escAttr(searchKw)+'\')">小红书搜索</button><button class="b bk" style="background:#1A1A1A;color:#fff;border:none" onclick="openDY(\''+escAttr(searchKw)+'\')">抖音搜索</button></div>';
+    return;
+  }
+  var data=CITY_DB[city];
+  var h='<div style="font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px"><span style="width:4px;height:16px;background:var(--pri);border-radius:2px;display:inline-block"></span>'+esc(city)+' · '+(cat==='food'?'美食':cat==='scenic'?'景点':'酒店')+'热榜</div>';
+  // 分类切换
+  h+='<div style="display:flex;gap:8px;margin-bottom:14px">';
+  ['food','scenic','hotel'].forEach(function(t){
+    var label=t==='food'?'🍜 美食':t==='scenic'?'🎡 景点':'🏨 酒店';
+    var isOn=t===cat;
+    h+='<button style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid '+(isOn?'var(--pri)':'var(--bd)')+';background:'+(isOn?'var(--pri-l)':'var(--card)')+';color:'+(isOn?'var(--pri)':'var(--txt)')+';cursor:pointer;transition:all .15s" onclick="renderHotCat(\''+city+'\',\''+t+'\')">'+label+'</button>';
+  });
+  h+='</div>';
+  // 小红书/抖音搜索入口
+  var searchKw=city+(cat==='food'?'美食':cat==='scenic'?'景点':'酒店');
+  h+='<div style="display:flex;gap:8px;margin-bottom:14px"><button style="padding:5px 12px;border-radius:16px;font-size:11px;font-weight:600;background:#FF2442;color:#fff;border:none;cursor:pointer" onclick="openXHS(\''+escAttr(searchKw)+'\')">小红书搜"'+esc(searchKw)+'"</button><button style="padding:5px 12px;border-radius:16px;font-size:11px;font-weight:600;background:#1A1A1A;color:#fff;border:none;cursor:pointer" onclick="openDY(\''+escAttr(searchKw)+'\')">抖音搜"'+esc(searchKw)+'"</button></div>';
+  h+=renderHotList(data[cat]||[],city,cat);
+  c.innerHTML=h;
+}
+
+// 渲染热榜列表
+function renderHotList(items,city,cat){
+  if(!items||!items.length)return '<div style="color:var(--txt2);text-align:center;padding:20px">暂无数据</div>';
+  var h='';
+  items.forEach(function(item,i){
+    var rankCls=i===0?'background:linear-gradient(135deg,#FFD700,#FFA500);color:#fff':i===1?'background:linear-gradient(135deg,#C0C0C0,#A0A0A0);color:#fff':i===2?'background:linear-gradient(135deg,#CD7F32,#B8860B);color:#fff':'background:var(--bg);color:var(--txt2)';
+    var borderCls=cat==='food'?'var(--err)':cat==='scenic'?'var(--pri)':'var(--warn)';
+    h+='<div style="background:var(--card);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;border-left:3px solid '+borderCls+';transition:all .15s;cursor:pointer" onclick="panToByName(\''+escAttr(item.n)+'\',\''+escAttr(city)+'\')" onmouseover="this.style.transform=\'translateY(-1px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,.08)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">';
+    h+='<div style="width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;'+rankCls+'">'+(i+1)+'</div>';
+    h+='<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;margin-bottom:2px">'+esc(item.n)+'</div><div style="font-size:12px;color:var(--txt2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+esc(item.d)+'</div>';
+    if(item.h)h+='<div style="font-size:10px;color:var(--pri);font-weight:600;margin-top:3px">'+esc(item.h)+'</div>';
+    h+='</div>';
+    // 小红书/抖音按钮
+    h+='<div style="display:flex;gap:4px;flex-shrink:0;align-items:center"><button style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#FF2442;color:#fff;border:none;cursor:pointer;white-space:nowrap" onclick="event.stopPropagation();openXHS(\''+escAttr(city+item.n)+'\')">小红书</button><button style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#1A1A1A;color:#fff;border:none;cursor:pointer;white-space:nowrap" onclick="event.stopPropagation();openDY(\''+escAttr(city+item.n)+'\')">抖音</button></div>';
+    h+='</div>';
+  });
+  return h;
+}
+
+// 切换分类（保留城市）
+function renderHotCat(city,cat){
+  document.getElementById('hotIpt').value=city+(cat==='food'?'美食':cat==='scenic'?'景点':'酒店');
+  doHotSearch();
+}
+
+// 点击热榜项在地图上定位
+function panToByName(name,city){
+  geocode(name,city).then(function(pos){
+    if(pos&&map){map.setCenter([pos.lng,pos.lat]);map.setZoom(16);
+      // 添加标记
+      var mk=new A.Marker({position:[pos.lng,pos.lat],title:name,offset:new A.Pixel(-13,-30)});
+      mk.setContent('<div style="background:var(--pri);color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3)">'+name+'</div>');
+      mk.setMap(map);poiMks.push(mk);
+    }
+  }).catch(function(){toast('无法定位: '+name)});
+}
+
+// 小红书搜索
+function openXHS(kw){
+  var isMobile=/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  if(isMobile){
+    tryOpenApp('xhsdiscover://search/result?keyword='+encodeURIComponent(kw),function(){window.open('https://www.xiaohongshu.com/search_result?keyword='+encodeURIComponent(kw)+'&source=web_search_result_notes','_blank')});
+  }else{
+    window.open('https://www.xiaohongshu.com/search_result?keyword='+encodeURIComponent(kw)+'&source=web_search_result_notes','_blank');
+  }
+}
+
+// 抖音搜索
+function openDY(kw){
+  var isMobile=/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  if(isMobile){
+    tryOpenApp('snssdk1128://search/result?keyword='+encodeURIComponent(kw),function(){window.open('https://www.douyin.com/search/'+encodeURIComponent(kw),'_blank')});
+  }else{
+    window.open('https://www.douyin.com/search/'+encodeURIComponent(kw),'_blank');
+  }
+}
+
+// 尝试拉起 APP，失败回退
+function tryOpenApp(scheme,fallback){
+  var iframe=document.createElement('iframe');
+  iframe.style.display='none';
+  document.body.appendChild(iframe);
+  iframe.src=scheme;
+  var opened=false;
+  var onBlur=function(){opened=true};
+  window.addEventListener('blur',onBlur);
+  setTimeout(function(){
+    window.removeEventListener('blur',onBlur);
+    document.body.removeChild(iframe);
+    if(!opened&&fallback)fallback();
+  },1500);
+}
+
+function escAttr(s){return s.replace(/'/g,"\'").replace(/"/g,'&quot;')}
+
 // 定位 - 高精度策略：watchPosition 持续获取直到精度<200m
 var watchId=null,bestPos=null,bestAcc=Infinity;
 function locateMe(){
@@ -767,6 +921,7 @@ document.addEventListener('click',function(e){if(!e.target.closest('.iwrap')&&!e
 // 工具
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show')},2000)}
 function esc(s){return s.replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+function escAttr(s){return s.replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 function restoreURL(){try{var p=new URLSearchParams(location.search),ln=parseFloat(p.get('lng')),la=parseFloat(p.get('lat')),z=parseInt(p.get('zoom')),s=p.get('style');if(ln&&la&&map)map.setCenter([ln,la]);if(z&&map)map.setZoom(z);if(s)setStyle(s)}catch(e){}}
 </script>
 </body>
