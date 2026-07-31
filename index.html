@@ -14,7 +14,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .hdr .logo em{font-style:normal;font-size:12px;font-weight:400;color:var(--txt3);margin-left:6px;letter-spacing:0}
 .hdr .rb{margin-left:auto;display:flex;gap:8px}
 .hdr .rb button{padding:6px 14px;border-radius:20px;border:1px solid var(--bd);background:var(--card);font-size:12px;cursor:pointer;white-space:nowrap;transition:all .2s;font-weight:500}
-.hdr .rb button:hover{background:var(--pri);border-color:var(--pri);color:#fff}
+.hdr .rb button:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.08)}
 
 .pnl{position:fixed;top:56px;left:0;width:380px;bottom:0;z-index:900;background:var(--card);box-shadow:1px 0 0 var(--bd);display:flex;flex-direction:column;transition:transform .3s}
 .pnl.hide{transform:translateX(-100%)}
@@ -36,18 +36,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .iwrap .xb:hover{color:var(--err);background:rgba(248,113,113,.1)}
 
 .b{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:10px 20px;border-radius:var(--radius);border:none;font-size:14px;cursor:pointer;transition:all .2s;font-weight:600}
-.bp{background:var(--pri);color:#fff}.bp:hover{background:var(--pri-d);transform:translateY(-1px);box-shadow:0 4px 12px rgba(79,110,247,.3)}
-.bo{background:transparent;border:1.5px solid var(--bd);color:var(--txt)}.bo:hover{border-color:var(--pri);color:var(--pri)}
+.bp{background:var(--pri);color:#fff}.bp:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(79,110,247,.25)}
+.bo{background:transparent;border:1.5px solid var(--bd);color:var(--txt)}.bo:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .bs{padding:5px 12px;font-size:12px}
 .bk{width:100%}
 
 .modes{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .mc{padding:7px 16px;border-radius:20px;border:1.5px solid var(--bd);font-size:13px;cursor:pointer;transition:all .2s;background:var(--card);user-select:none;font-weight:500}
 .mc.on{background:var(--pri);color:#fff;border-color:var(--pri);box-shadow:0 2px 8px rgba(79,110,247,.25)}
-.mc:hover:not(.on){border-color:var(--pri);color:var(--pri)}
+.mc:hover:not(.on){transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.08)}
 
 .pc{padding:12px;border-radius:var(--radius);border:1.5px solid var(--bd);margin-bottom:10px;cursor:pointer;transition:all .2s;background:var(--card)}
-.pc:hover{border-color:var(--pri);box-shadow:0 2px 12px rgba(79,110,247,.1);transform:translateY(-1px)}
+.pc:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
 .pc .pn{font-size:14px;font-weight:600;margin-bottom:2px}
 .pc .pa{font-size:12px;color:var(--txt2)}
 .pc .pd{font-size:12px;color:var(--pri);margin-top:4px;font-weight:500}
@@ -65,7 +65,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .sg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
 .si{padding:10px 6px;border-radius:var(--radius);border:2px solid var(--bd);text-align:center;cursor:pointer;font-size:12px;transition:all .2s;font-weight:500}
 .si.on{border-color:var(--pri);color:var(--pri);background:var(--pri-l)}
-.si:hover{border-color:var(--pri);transform:translateY(-1px)}
+.si:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.06)}
 
 .collapse-hd{font-size:13px;color:var(--txt2);cursor:pointer;margin:10px 0;display:flex;align-items:center;gap:4px;user-select:none;font-weight:500;padding:8px 0;transition:color .2s}
 .collapse-hd:hover{color:var(--pri)}
@@ -93,7 +93,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .ac{position:fixed;z-index:1100;background:var(--card);border:1.5px solid var(--bd);border-radius:0 0 var(--radius) var(--radius);max-height:240px;overflow-y:auto;box-shadow:var(--sh-lg)}
 .ac div{padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--bg);transition:background .15s}
 .ac div:last-child{border-bottom:none}
-.ac div:hover{background:var(--pri-l)}
+.ac div:hover{background:var(--pri-l);transform:translateX(2px)}
 
 .spin{display:inline-block;width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--pri);border-radius:50%;animation:sp .6s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -642,49 +642,51 @@ function initGrid(){
 }
 function setStyle(s){if(!map)return;curStyle=s;map.setMapStyle('amap://styles/'+s);initGrid();toast('已切换: '+SNAME[s])}
 
-// 定位 - 自动定位并写入输入框
+// 定位 - 多级策略确保精准
 function locateMe(){
   if(!ready)return;
-  // 按钮动画
   var btns=document.querySelectorAll('.loc-btn-sm');
   btns.forEach(function(b){b.classList.add('spin-anim')});
-  try{
-    // 优先用浏览器定位
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(function(pos){
-        var lng=pos.coords.longitude,lat=pos.coords.latitude;
-        myPos=[lng,lat];
-        map.setCenter(myPos);map.setZoom(15);
-        // 逆编码获取地址名
-        reverseGeo(lng,lat);
-      },function(){
-        // 浏览器定位失败，用高德定位
-        tryAmapLocate();
-      },{enableHighAccuracy:true,timeout:8000});
-    }else{
-      tryAmapLocate();
-    }
-  }catch(e){tryAmapLocate()}
+  // 策略1: 浏览器高精度定位
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lng=pos.coords.longitude,lat=pos.coords.latitude;
+      myPos=[lng,lat];
+      map.setCenter(myPos);map.setZoom(15);
+      reverseGeo(lng,lat);
+    },function(){
+      // 策略2: 浏览器定位失败→IP定位
+      ipLocate();
+    },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
+  }else{
+    ipLocate();
+  }
 }
-function tryAmapLocate(){
-  try{
-    var g=new A.Geolocation({enableHighAccuracy:true,timeout:10000});
-    g.getCurrentPosition(function(s,r){
-      if(s==='complete'){
-        myPos=[r.position.lng,r.position.lat];
-        map.setCenter(myPos);map.setZoom(15);
-        reverseGeo(myPos[0],myPos[1]);
+// 策略2: IP定位 (REST API)
+function ipLocate(){
+  fetch('https://restapi.amap.com/v3/ip?key='+KEY)
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(data.status==='1'&&data.rectangle){
+        // rectangle: "lng1,lat1;lng2,lat2" 取中心
+        var pts=data.rectangle.split(';');
+        var p1=pts[0].split(','),p2=pts[1].split(',');
+        var lng=(parseFloat(p1[0])+parseFloat(p2[0]))/2;
+        var lat=(parseFloat(p1[1])+parseFloat(p2[1]))/2;
+        myPos=[lng,lat];
+        map.setCenter(myPos);map.setZoom(13);
+        reverseGeo(lng,lat);
       }else{
-        // 定位失败，用地图中心做逆编码
+        // 策略3: 用地图中心
         var c=map.getCenter();
         reverseGeo(c.lng,c.lat);
-        toast('精确定位失败，已使用地图中心');
+        toast('IP定位失败，已使用地图中心');
       }
+    })
+    .catch(function(){
+      var c=map.getCenter();
+      reverseGeo(c.lng,c.lat);
     });
-  }catch(e){
-    var c=map.getCenter();
-    reverseGeo(c.lng,c.lat);
-  }
 }
 // 逆地理编码：坐标→地址名
 function reverseGeo(lng,lat){
