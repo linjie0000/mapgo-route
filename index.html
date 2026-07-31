@@ -62,14 +62,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .step .st{font-size:13px;color:var(--txt);line-height:1.5}
 .step .sm{font-size:12px;color:var(--txt2)}
 
-.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
-.si{padding:0;border-radius:12px;border:2px solid var(--bd);text-align:center;cursor:pointer;font-size:12px;transition:all .25s;font-weight:500;overflow:hidden;background:var(--card);position:relative}
-.si:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.1)}
-.si.on{border-color:var(--pri);box-shadow:0 0 0 2px rgba(22,119,255,.2),0 4px 16px rgba(22,119,255,.15)}
-.si .sw{height:36px;width:100%;position:relative;overflow:hidden}
-.si .sw::after{content:'';position:absolute;bottom:0;left:0;right:0;height:12px;background:linear-gradient(transparent,var(--card))}
-.si .sn{padding:6px 4px 8px;font-size:12px;font-weight:600;color:var(--txt);line-height:1.2}
-.si.on .sn{color:var(--pri)}
+
 
 .collapse-hd{font-size:13px;color:var(--txt2);cursor:pointer;margin:10px 0;display:flex;align-items:center;gap:4px;user-select:none;font-weight:500;padding:8px 0;transition:color .2s}
 .collapse-hd:hover{color:var(--pri)}
@@ -132,7 +125,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 <div class="hdr">
   <div class="logo">MapGo<em>地图搜索路线</em></div>
   <div class="rb">
-    <button onclick="switchTab('style')">样式</button>
     <button onclick="openShare()">分享</button>
   </div>
 </div>
@@ -141,7 +133,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
   <div class="tabs">
     <div class="tab on" data-t="route" onclick="switchTab('route')">路线</div>
     <div class="tab" data-t="search" onclick="switchTab('search')">搜索</div>
-    <div class="tab" data-t="style" onclick="switchTab('style')">样式</div>
   </div>
 
   <div class="body" id="pRoute">
@@ -192,18 +183,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
     <div id="searchRes" style="margin-top:12px"></div>
   </div>
 
-  <div class="body" id="pStyle" style="display:none">
-    <p style="font-size:15px;margin-bottom:10px;font-weight:600">地图样式</p>
-    <div class="sg" id="styleGrid"></div>
-    <div style="margin-top:20px">
-      <p style="font-size:15px;margin-bottom:10px;font-weight:600">地图视角</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <div style="flex:1;min-width:80px"><label style="font-size:12px;color:var(--txt2)">缩放</label><input type="range" id="zoomR" min="3" max="20" value="12" oninput="map&&map.setZoom(+this.value)" style="width:100%"></div>
-        <div style="flex:1;min-width:80px"><label style="font-size:12px;color:var(--txt2)">俯仰</label><input type="range" id="pitchR" min="0" max="83" value="0" oninput="map&&map.setPitch(+this.value)" style="width:100%"></div>
-        <div style="flex:1;min-width:80px"><label style="font-size:12px;color:var(--txt2)">旋转</label><input type="range" id="rotR" min="0" max="360" value="0" oninput="map&&map.setRotation(+this.value)" style="width:100%"></div>
-      </div>
-    </div>
-  </div>
+
 </div>
 
 <button class="pnl-tog" id="pnlTog" onclick="togPnl()">◀</button>
@@ -224,10 +204,6 @@ var KEY='d32b4be5e03b0b30b6fe6909be6d84f6',SKEY='';
 var A=null,map=null,ready=false,mode='driving',curStyle='normal',poiMks=[],acTmr=null;
 var myPos=null; // 当前位置坐标
 
-var STYLES=['normal','dark','light','whitesmoke','fresh','grey','graffiti','macaron','blue','darkblue','wine'];
-var SNAME={'normal':'标准','dark':'幻影黑','light':'月光银','whitesmoke':'远山黛','fresh':'草色青','grey':'雅士灰','graffiti':'涂鸦','macaron':'马卡龙','blue':'靛青蓝','darkblue':'极夜蓝','wine':'酱籽'};
-var SCOLOR={'normal':'linear-gradient(135deg,#e8f4e8 0%,#d4e8f7 50%,#f5f0e1 100%)','dark':'linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)','light':'linear-gradient(135deg,#f8f5f0 0%,#efe9dd 50%,#e8dfd0 100%)','whitesmoke':'linear-gradient(135deg,#eef0f2 0%,#d8dce3 50%,#c5cad4 100%)','fresh':'linear-gradient(135deg,#e8f5e9 0%,#a5d6a7 50%,#66bb6a 100%)','grey':'linear-gradient(135deg,#f5f5f5 0%,#bdbdbd 50%,#9e9e9e 100%)','graffiti':'linear-gradient(135deg,#ff6b6b 0%,#ffd93d 25%,#6bcb77 50%,#4d96ff 75%,#9b59b6 100%)','macaron':'linear-gradient(135deg,#fbc2eb 0%,#a6c1ee 50%,#b8e6d0 100%)','blue':'linear-gradient(135deg,#d6eaf8 0%,#5dade2 50%,#2e86c1 100%)','darkblue':'linear-gradient(135deg,#0c1445 0%,#1b2a5e 50%,#2e4482 100%)','wine':'linear-gradient(135deg,#f5e6e8 0%,#c0756e 50%,#7b2d3b 100%)'};
-
 // ==================== 加载 ====================
 window.onload=function(){
   document.getElementById('mapBox').innerHTML='<div class="empty" style="padding-top:80px"><div class="spin" style="margin:0 auto 12px"></div><p>地图加载中...</p></div>';
@@ -236,7 +212,7 @@ window.onload=function(){
     A=AMap;window.AMap=AMap;window.A=A;
     map=new A.Map('mapBox',{zoom:12,center:[113.26,23.13],mapStyle:'amap://styles/normal',viewMode:'3D'});
     map.on('click',function(e){toast('位置: '+e.lnglat.getLng().toFixed(6)+', '+e.lnglat.getLat().toFixed(6))});
-    ready=true;initGrid();toast('地图加载成功');restoreURL();locateMe();
+    ready=true;toast('地图加载成功');restoreURL();locateMe();
   }).catch(function(e){
     console.error('加载失败:',e);
     document.getElementById('mapBox').innerHTML='<div class="empty" style="padding-top:60px"><div style="font-size:48px;color:var(--err)">✗</div><p style="margin-top:12px">地图加载失败</p><p style="margin-top:8px;font-size:12px;color:var(--txt2)">请在 lbs.amap.com 确认：<br>1. Key 类型为「Web端(JS API)」<br>2. 域名白名单留空或添加 *<br>3. 新Key需配置安全密钥</p></div>';
@@ -330,7 +306,6 @@ function switchTab(t){
   document.querySelector('.tab[data-t="'+t+'"]').classList.add('on');
   document.getElementById('pRoute').style.display=t==='route'?'block':'none';
   document.getElementById('pSearch').style.display=t==='search'?'block':'none';
-  document.getElementById('pStyle').style.display=t==='style'?'block':'none';
   var p=document.getElementById('pnl');if(p.classList.contains('hide'))togPnl();
 }
 function togPnl(){var p=document.getElementById('pnl'),b=document.getElementById('pnlTog');p.classList.toggle('hide');b.textContent=p.classList.contains('hide')?'▶':'◀'}
@@ -646,17 +621,8 @@ function panTo(lng,lat){if(map){map.setCenter([lng,lat]);map.setZoom(16)}}
 function setFrom(n){document.getElementById('fromIpt').value=n;switchTab('route');toast('已设为起点')}
 function setTo(n){document.getElementById('toIpt').value=n;switchTab('route');toast('已设为终点')}
 
-// ==================== 样式 ====================
-function initGrid(){
-  var g=document.getElementById('styleGrid'),h='';
-  STYLES.forEach(function(s){
-    h+='<div class="si'+(s===curStyle?' on':'')+'" onclick="setStyle(\''+s+'\')">';
-    h+='<div class="sw" style="background:'+(SCOLOR[s]||'#eee')+'"></div>';
-    h+='<div class="sn">'+SNAME[s]+'</div></div>';
-  });
-  g.innerHTML=h;
-}
-function setStyle(s){if(!map)return;curStyle=s;map.setMapStyle('amap://styles/'+s);initGrid();toast('已切换: '+SNAME[s])}
+// 地图视角控制
+function setStyle(s){if(!map)return;curStyle=s;map.setMapStyle('amap://styles/'+s);toast('已切换样式')}
 
 // 定位 - 高精度策略：watchPosition 持续获取直到精度<200m
 var watchId=null,bestPos=null,bestAcc=Infinity;
