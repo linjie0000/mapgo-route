@@ -229,6 +229,7 @@ window.onload=function(){
 };
 
 // ==================== Geocoder 地理编码（地名→坐标）====================
+// 使用高德 REST API 替代 JSAPI 插件（JSAPI 插件在某些域名下回调不触发）
 function geocode(address){
   return new Promise(function(resolve,reject){
     if(!address){resolve(null);return}
@@ -238,42 +239,60 @@ function geocode(address){
       resolve(new A.LngLat(parseFloat(parts[0]),parseFloat(parts[1])));
       return;
     }
-    var done=false, timer=null;
-    // 方案1：Geocoder
-    try{
-      var geo=new A.Geocoder({city:'全国'});
-      timer=setTimeout(function(){
-        if(!done){done=true;fallbackSearch(address,resolve,reject)}
-      },4000);
-      geo.getLocation(address,function(status,result){
-        if(done)return; done=true; clearTimeout(timer);
-        if(status==='complete'&&result.geocodes&&result.geocodes.length>0){
-          var loc=result.geocodes[0].location;
-          resolve(new A.LngLat(loc.lng,loc.lat));
+    // 方案1：REST API 地理编码
+    fetch('https://restapi.amap.com/v3/geocode/geo?address='+encodeURIComponent(address)+'&key='+KEY)
+      .then(function(r){return r.json()})
+      .then(function(data){
+        if(data.status==='1'&&data.geocodes&&data.geocodes.length>0){
+          var loc=data.geocodes[0].location; // "lng,lat"
+          var lngLat=loc.split(',');
+          resolve(new A.LngLat(parseFloat(lngLat[0]),parseFloat(lngLat[1])));
         }else{
-          // Geocoder 返回无结果，降级到 PlaceSearch
-          fallbackSearch(address,resolve,reject);
+          // REST API 无结果，降级到 POI 搜索
+          searchPOI(address,resolve,reject);
         }
+      })
+      .catch(function(e){
+        // REST API 网络失败，降级到 JSAPI Geocoder
+        tryJSAPIGeocoder(address,resolve,reject);
       });
-    }catch(e){
-      if(!done){done=true;fallbackSearch(address,resolve,reject)}
-    }
   });
 }
-// 降级：用 PlaceSearch 解析地名
-function fallbackSearch(address,resolve,reject){
+// 降级方案1：REST API POI 搜索
+function searchPOI(address,resolve,reject){
+  fetch('https://restapi.amap.com/v3/place/text?keywords='+encodeURIComponent(address)+'&key='+KEY+'&offset=3')
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(data.status==='1'&&data.pois&&data.pois.length>0){
+        var loc=data.pois[0].location.split(',');
+        resolve(new A.LngLat(parseFloat(loc[0]),parseFloat(loc[1])));
+      }else{
+        // POI 也找不到，最后尝试 JSAPI Geocoder
+        tryJSAPIGeocoder(address,resolve,reject);
+      }
+    })
+    .catch(function(e){
+      tryJSAPIGeocoder(address,resolve,reject);
+    });
+}
+// 降级方案2：JSAPI Geocoder 插件（带超时）
+function tryJSAPIGeocoder(address,resolve,reject){
   try{
-    var ps=new A.PlaceSearch({pageSize:1,extensions:'base'});
-    ps.search(address,function(s,r){
-      if(s==='complete'&&r.poiList&&r.poiList.pois&&r.poiList.pois.length>0){
-        var loc=r.poiList.pois[0].location;
+    var geo=new A.Geocoder({city:'全国'});
+    var timer=setTimeout(function(){
+      reject(new Error('地址解析超时: '+address));
+    },5000);
+    geo.getLocation(address,function(status,result){
+      clearTimeout(timer);
+      if(status==='complete'&&result.geocodes&&result.geocodes.length>0){
+        var loc=result.geocodes[0].location;
         resolve(new A.LngLat(loc.lng,loc.lat));
       }else{
         reject(new Error('无法解析地址: '+address));
       }
     });
   }catch(e){
-    reject(new Error('地址解析失败: '+address+' ('+e.message+')'));
+    reject(new Error('地址解析失败: '+address));
   }
 }
 
