@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MapGo 地图搜索路线</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --primary-light: #e6f0ff;
+      --success: #52c41a;
+      --warning: #faad14;
+      --danger: #ff4d4f;
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #666;
+      --border: #e8e8e8;
+      --shadow: 0 2px 12px rgba(0,0,0,0.1);
+      --radius: 10px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; }
+
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      background: var(--card); box-shadow: var(--shadow);
+      display: flex; align-items: center; padding: 8px 12px; gap: 8px; height: 52px;
+    }
+    .top-bar .logo { font-size: 18px; font-weight: 700; color: var(--primary); white-space: nowrap; }
+    .top-bar .logo span { font-size: 12px; font-weight: 400; color: var(--text-secondary); margin-left: 4px; }
+    .top-bar .right-btns { margin-left: auto; display: flex; gap: 6px; }
+    .style-btn {
+      padding: 4px 10px; border-radius: 16px; border: 1px solid var(--border);
+      background: var(--card); font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    }
+    .style-btn:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+    .panel {
+      position: fixed; top: 52px; left: 0; width: 380px; bottom: 0; z-index: 900;
+      background: var(--card); box-shadow: 2px 0 12px rgba(0,0,0,0.06);
+      display: flex; flex-direction: column; overflow: hidden; transition: transform 0.3s;
+    }
+    .panel.collapsed { transform: translateX(-100%); }
+    .panel-toggle {
+      position: fixed; top: 60px; left: 380px; z-index: 901;
+      width: 28px; height: 48px; background: var(--card); border-radius: 0 8px 8px 0;
+      box-shadow: var(--shadow); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--text-secondary); transition: left 0.3s; border: none;
+    }
+    .panel.collapsed ~ .panel-toggle { left: 0; }
+
+    .panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .panel-tab {
+      flex: 1; padding: 10px; text-align: center; font-size: 14px; cursor: pointer;
+      color: var(--text-secondary); border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .panel-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+    .panel-body { flex: 1; overflow-y: auto; padding: 12px; }
+
+    .search-group { margin-bottom: 12px; }
+    .search-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .search-input-wrap {
+      position: relative; display: flex; align-items: center; background: var(--bg); border-radius: 8px; border: 1px solid var(--border);
+      transition: border-color 0.2s;
+    }
+    .search-input-wrap:focus-within { border-color: var(--primary); }
+    .search-input-wrap .icon { padding: 0 8px; color: var(--text-secondary); font-size: 16px; flex-shrink: 0; }
+    .search-input-wrap input { flex: 1; border: none; outline: none; padding: 10px 8px; font-size: 14px; background: transparent; min-width: 0; }
+    .search-input-wrap .clear-btn { padding: 4px 8px; cursor: pointer; color: var(--text-secondary); font-size: 18px; display: none; flex-shrink: 0; }
+    .search-input-wrap .clear-btn:hover { color: var(--danger); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 8px 16px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer;
+      transition: all 0.2s; font-weight: 500;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #0958d9; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn-block { width: 100%; }
+
+    .mode-selector { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+    .mode-chip {
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px;
+      cursor: pointer; transition: all 0.2s; background: var(--card); user-select: none;
+    }
+    .mode-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .mode-chip:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+    .poi-card {
+      padding: 10px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px;
+      cursor: pointer; transition: all 0.2s; background: var(--card);
+    }
+    .poi-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(22,119,255,0.1); }
+    .poi-card .poi-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .poi-card .poi-addr { font-size: 12px; color: var(--text-secondary); }
+    .poi-card .poi-dist { font-size: 12px; color: var(--primary); margin-top: 2px; }
+    .poi-card .poi-actions { margin-top: 6px; display: flex; gap: 6px; }
+
+    .route-summary { background: var(--primary-light); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .route-summary .route-time { font-size: 24px; font-weight: 700; color: var(--primary); }
+    .route-summary .route-dist { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
+    .route-step { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .route-step:last-child { border-bottom: none; }
+    .route-step .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px; flex-shrink: 0; }
+    .route-step .step-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+    .route-step .step-meta { font-size: 12px; color: var(--text-secondary); }
+
+    .style-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+    .style-item {
+      padding: 8px; border-radius: 8px; border: 2px solid var(--border); text-align: center;
+      cursor: pointer; font-size: 12px; transition: all 0.2s;
+    }
+    .style-item.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .style-item:hover { border-color: var(--primary); }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000;
+      background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--card); border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+    .modal h3 { font-size: 16px; margin-bottom: 12px; }
+    .modal textarea { width: 100%; height: 100px; border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-size: 13px; resize: none; }
+
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #333; color: #fff; padding: 8px 20px; border-radius: 20px; font-size: 13px;
+      z-index: 3000; opacity: 0; transition: all 0.3s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    #mapContainer { position: fixed; top: 52px; left: 380px; right: 0; bottom: 0; }
+
+    .locate-btn {
+      position: fixed; right: 12px; bottom: 24px; z-index: 800;
+      width: 44px; height: 44px; border-radius: 50%; background: var(--card);
+      box-shadow: var(--shadow); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; transition: transform 0.2s;
+    }
+    .locate-btn:hover { transform: scale(1.1); }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+    .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+    .pagination button { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); cursor: pointer; }
+    .pagination button:disabled { opacity: 0.4; cursor: default; }
+
+    /* 自动补全下拉 — 不被父级裁剪 */
+    .ac-dropdown {
+      position: absolute; left: 0; right: 0; top: 100%; background: var(--card);
+      border: 1px solid var(--border); border-radius: 0 0 8px 8px; z-index: 100;
+      max-height: 200px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .ac-item { padding: 8px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--bg); }
+    .ac-item:hover { background: var(--primary-light); }
+
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .route-waypoint { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .route-waypoint input { flex: 1; }
+    .route-waypoint .remove-wp { cursor: pointer; color: var(--danger); font-size: 18px; }
+
+    .city-input { margin-bottom: 8px; }
+    .city-input input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--bg); }
+    .city-input input:focus { outline: none; border-color: var(--primary); }
+
+    /* 高级选项折叠 — 修复权重问题 */
+    .adv-toggle {
+      font-size: 12px; color: var(--text-secondary); cursor: pointer; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 4px; user-select: none;
+    }
+    .adv-toggle:hover { color: var(--primary); }
+    .adv-body { display: none !important; }
+    .adv-body.open { display: block !important; }
+
+    .strategy-selector select {
+      width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; background: var(--bg);
+    }
+
+    @media (max-width: 768px) {
+      .panel {
+        top: auto; left: 0; right: 0; bottom: 0; width: 100%; height: 50vh;
+        border-radius: 16px 16px 0 0; box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
+        transform: translateY(0);
+      }
+      .panel.collapsed { transform: translateY(100%); }
+      .panel-toggle {
+        top: auto; bottom: 52vh; left: 50%; transform: translateX(-50%);
+        width: 48px; height: 28px; border-radius: 8px 8px 0 0;
+      }
+      .panel.collapsed ~ .panel-toggle { bottom: 0; }
+      .panel:not(.collapsed) ~ .panel-toggle { bottom: 52vh; left: 50%; }
+      #mapContainer { left: 0; top: 52px; bottom: 50vh; }
+    }
+
+    .panel-body::-webkit-scrollbar { width: 4px; }
+    .panel-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- 顶部栏 -->
+<div class="top-bar">
+  <div class="logo">MapGo<span>地图搜索路线</span></div>
+  <div class="right-btns">
+    <button class="style-btn" onclick="switchTab('style')">样式</button>
+    <button class="style-btn" onclick="openShareModal()">分享</button>
+  </div>
+</div>
+
+<!-- 侧面板 -->
+<div class="panel" id="sidePanel">
+  <div class="panel-tabs">
+    <div class="panel-tab active" data-tab="route" onclick="switchTab('route')">路线</div>
+    <div class="panel-tab" data-tab="search" onclick="switchTab('search')">搜索</div>
+    <div class="panel-tab" data-tab="style" onclick="switchTab('style')">样式</div>
+  </div>
+
+  <!-- 路线面板 -->
+  <div class="panel-body" id="routePanel">
+    <div class="mode-selector" id="modeSelector">
+      <div class="mode-chip active" data-mode="driving" onclick="setMode('driving')">驾车</div>
+      <div class="mode-chip" data-mode="transit" onclick="setMode('transit')">公交</div>
+      <div class="mode-chip" data-mode="walking" onclick="setMode('walking')">步行</div>
+      <div class="mode-chip" data-mode="riding" onclick="setMode('riding')">骑行</div>
+    </div>
+
+    <div class="search-group">
+      <label>起点</label>
+      <div class="search-input-wrap">
+        <span class="icon">📍</span>
+        <input type="text" id="routeFrom" placeholder="输入起点（留空则用当前位置）" oninput="onRouteInput('from')">
+        <span class="clear-btn" onclick="clearInput('routeFrom')">×</span>
+      </div>
+      <div class="ac-dropdown" id="acFrom" style="display:none;"></div>
+    </div>
+
+    <div class="search-group">
+      <label>终点</label>
+      <div class="search-input-wrap">
+        <span class="icon">🎯</span>
+        <input type="text" id="routeTo" placeholder="输入终点" oninput="onRouteInput('to')">
+        <span class="clear-btn" onclick="clearInput('routeTo')">×</span>
+      </div>
+      <div class="ac-dropdown" id="acTo" style="display:none;"></div>
+    </div>
+
+    <!-- 途经点 -->
+    <div id="waypointsSection" style="display:none;">
+      <div class="adv-toggle" onclick="toggleAdv('wp')"><span id="wpArrow">▶</span> 途经点（可选）</div>
+      <div class="adv-body" id="wpBody">
+        <div id="waypointsList"></div>
+        <button class="btn btn-outline btn-sm" onclick="addWaypoint()">+ 添加途经点</button>
+      </div>
+    </div>
+
+    <!-- 公交城市 -->
+    <div id="citySection" style="display:none;">
+      <div class="city-input">
+        <input type="text" id="transitCity" placeholder="输入城市名（如：北京）">
+      </div>
+    </div>
+
+    <!-- 高级选项 -->
+    <div class="adv-toggle" onclick="toggleAdv('strategy')"><span id="strategyArrow">▶</span> 高级选项</div>
+    <div class="adv-body" id="strategyBody">
+      <div id="drivingStrategy" style="display:none;">
+        <select id="drivingPolicy">
+          <option value="fastest">最快</option>
+          <option value="shortest">最短</option>
+          <option value="least_fee">少收费</option>
+          <option value="no_highway">不走高速</option>
+          <option value="avoid_jam">躲避拥堵</option>
+        </select>
+      </div>
+      <div id="transitStrategy" style="display:none;">
+        <select id="transitPolicy">
+          <option value="fastest">最快</option>
+          <option value="least_cost">最少花费</option>
+          <option value="least_walk">少步行</option>
+          <option value="most_comfort">最舒适</option>
+          <option value="no_subway">不乘地铁</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="doRoute()" style="margin-top:12px;">开始规划</button>
+    <div id="routeResult" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- 搜索面板 -->
+  <div class="panel-body" id="searchPanel" style="display:none;">
+    <div class="search-group">
+      <label>搜索关键词</label>
+      <div class="search-input-wrap">
+        <span class="icon">🔍</span>
+        <input type="text" id="searchKeyword" placeholder="如：星巴克、停车场、景点" oninput="onSearchInput()">
+        <span class="clear-btn" onclick="clearInput('searchKeyword')">×</span>
+      </div>
+      <div class="ac-dropdown" id="acSearch" style="display:none;"></div>
+    </div>
+
+    <div class="search-group">
+      <label>城市 / 区域</label>
+      <div class="search-input-wrap">
+        <span class="icon">🏙</span>
+        <input type="text" id="searchCity" placeholder="如：北京、上海">
+      </div>
+    </div>
+
+    <div class="adv-toggle" onclick="toggleAdv('nearby')"><span id="nearbyArrow">▶</span> 周边搜索（可选）</div>
+    <div class="adv-body" id="nearbyBody">
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;">
+          <label style="font-size:12px;color:var(--text-secondary);">经度</label>
+          <input type="number" id="searchCenterLng" placeholder="116.397" step="0.001" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:12px;color:var(--text-secondary);">纬度</label>
+          <input type="number" id="searchCenterLat" placeholder="39.909" step="0.001" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+        </div>
+      </div>
+      <div style="margin-top:6px;">
+        <label style="font-size:12px;color:var(--text-secondary);">搜索半径（米）</label>
+        <input type="number" id="searchRadius" placeholder="3000" value="3000" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="doSearch()" style="margin-top:12px;">搜索</button>
+    <div id="searchResult" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- 样式面板 -->
+  <div class="panel-body" id="stylePanel" style="display:none;">
+    <p style="font-size:14px;margin-bottom:8px;">选择地图样式</p>
+    <div class="style-grid" id="styleGrid"></div>
+    <div style="margin-top:16px;">
+      <p style="font-size:14px;margin-bottom:8px;">地图视角</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:80px;">
+          <label style="font-size:12px;color:var(--text-secondary);">缩放</label>
+          <input type="range" id="zoomSlider" min="3" max="20" value="12" oninput="onZoomChange()" style="width:100%;">
+        </div>
+        <div style="flex:1;min-width:80px;">
+          <label style="font-size:12px;color:var(--text-secondary);">俯仰</label>
+          <input type="range" id="pitchSlider" min="0" max="83" value="0" oninput="onPitchChange()" style="width:100%;">
+        </div>
+        <div style="flex:1;min-width:80px;">
+          <label style="font-size:12px;color:var(--text-secondary);">旋转</label>
+          <input type="range" id="rotationSlider" min="0" max="360" value="0" oninput="onRotationChange()" style="width:100%;">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 面板切换 -->
+<button class="panel-toggle" id="panelToggle" onclick="togglePanel()">◀</button>
+
+<!-- 地图 -->
+<div id="mapContainer"></div>
+
+<!-- 定位 -->
+<button class="locate-btn" onclick="locateMe()" title="定位">📍</button>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 分享弹窗 -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal">
+    <h3>分享当前地图</h3>
+    <textarea id="shareText" readonly></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn btn-primary" onclick="copyShareLink()">复制</button>
+      <button class="btn btn-outline" onclick="closeShareModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 高德 JSAPI Loader -->
+<script src="https://webapi.amap.com/loader.js"></script>
+
+<script>
+  // ==================== 配置 ====================
+  const AMAP_KEY = 'd32b4be5e03b0b30b6fe6909be6d84f6';
+  const AMAP_SECURITY_KEY = '';
+
+  // ==================== 全局 ====================
+  let map = null;
+  let AMapLib = null;  // Loader 返回的 AMap
+  let currentMode = 'driving';
+  let currentStyle = 'normal';
+  let poiMarkers = [];
+  let searchPageIndex = 1;
+  let searchPageSize = 10;
+  let searchTotalCount = 0;
+  let geocoder = null;
+  let mapReady = false;
+
+  const MAP_STYLES = [
+    { key: 'normal', name: '标准' }, { key: 'dark', name: '幻影黑' },
+    { key: 'light', name: '月光银' }, { key: 'whitesmoke', name: '远山黛' },
+    { key: 'fresh', name: '草色青' }, { key: 'grey', name: '雅士灰' },
+    { key: 'graffiti', name: '涂鸦' }, { key: 'macaron', name: '马卡龙' },
+    { key: 'blue', name: '靛青蓝' }, { key: 'darkblue', name: '极夜蓝' },
+    { key: 'wine', name: '酱籽' },
+  ];
+
+  // ==================== 初始化 ====================
+  function initMap() {
+    map = new AMapLib.Map('mapContainer', {
+      zoom: 12, center: [116.397, 39.909],
+      mapStyle: 'amap://styles/normal', viewMode: '3D', pitch: 0, rotation: 0,
+    });
+
+    map.on('click', function(e) {
+      showToast('点击位置: ' + e.lnglat.getLng().toFixed(6) + ', ' + e.lnglat.getLat().toFixed(6));
+    });
+
+    geocoder = new AMapLib.Geocoder();
+    initStyleGrid();
+    mapReady = true;
+    showToast('地图加载成功');
+
+    // 恢复 URL 参数
+    restoreFromURL();
+    // 自动定位
+    locateMe();
+  }
+
+  // ==================== 加载地图 ====================
+  function loadAMapScript() {
+    document.getElementById('mapContainer').innerHTML =
+      '<div class="empty-state" style="padding-top:80px;"><div class="spinner" style="margin:0 auto 12px;"></div><p>地图加载中...</p></div>';
+
+    window._AMapSecurityConfig = { securityJsCode: AMAP_SECURITY_KEY || '' };
+
+    AMapLoader.load({
+      key: AMAP_KEY,
+      version: '2.0',
+      plugins: ['AMap.Geocoder', 'AMap.Driving', 'AMap.Walking', 'AMap.Riding',
+                'AMap.Transfer', 'AMap.PlaceSearch', 'AMap.AutoComplete', 'AMap.Geolocation'],
+    }).then(function(AMap) {
+      AMapLib = AMap;
+      window.AMap = AMap;  // 部分插件需要全局 AMap
+      initMap();
+    }).catch(function(e) {
+      console.error('地图加载失败:', e);
+      let msg = '地图加载失败';
+      if (e && e.message) {
+        if (e.message.indexOf('key') !== -1 || e.message.indexOf('Key') !== -1 || e.message.indexOf('USERKEY') !== -1) {
+          msg = 'API Key 无效或需配置安全密钥';
+        } else if (e.message.indexOf('network') !== -1 || e.message.indexOf('fetch') !== -1) {
+          msg = '网络连接失败';
+        } else {
+          msg = e.message;
+        }
+      }
+      document.getElementById('mapContainer').innerHTML =
+        '<div class="empty-state" style="padding-top:60px;"><div style="font-size:48px;color:var(--danger);">✗</div><p style="margin-top:12px;">' + msg + '</p><p style="margin-top:8px;font-size:12px;color:var(--text-secondary);">请在 <a href="https://lbs.amap.com" target="_blank">lbs.amap.com</a> 确认：<br>1. Key 类型为「Web端(JS API)」<br>2. 安全密钥(如需要)已填入<br>3. 域名白名单留空或添加 *</p></div>';
+    });
+  }
+
+  // ==================== 面板 ====================
+  function switchTab(tab) {
+    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.panel-tab[data-tab="' + tab + '"]').classList.add('active');
+    document.getElementById('routePanel').style.display = tab === 'route' ? 'block' : 'none';
+    document.getElementById('searchPanel').style.display = tab === 'search' ? 'block' : 'none';
+    document.getElementById('stylePanel').style.display = tab === 'style' ? 'block' : 'none';
+    const panel = document.getElementById('sidePanel');
+    if (panel.classList.contains('collapsed')) togglePanel();
+  }
+
+  function togglePanel() {
+    const panel = document.getElementById('sidePanel');
+    const toggle = document.getElementById('panelToggle');
+    panel.classList.toggle('collapsed');
+    toggle.textContent = panel.classList.contains('collapsed') ? '▶' : '◀';
+  }
+
+  // ==================== 出行方式 ====================
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-chip').forEach(c => c.classList.remove('active'));
+    document.querySelector('.mode-chip[data-mode="' + mode + '"]').classList.add('active');
+    document.getElementById('waypointsSection').style.display = mode === 'driving' ? 'block' : 'none';
+    document.getElementById('citySection').style.display = mode === 'transit' ? 'block' : 'none';
+    document.getElementById('drivingStrategy').style.display = mode === 'driving' ? 'block' : 'none';
+    document.getElementById('transitStrategy').style.display = mode === 'transit' ? 'block' : 'none';
+  }
+
+  // ==================== 途经点 ====================
+  function addWaypoint() {
+    const list = document.getElementById('waypointsList');
+    const idx = list.children.length;
+    if (idx >= 16) { showToast('最多支持16个途经点'); return; }
+    const div = document.createElement('div');
+    div.className = 'route-waypoint';
+    div.innerHTML = '<input type="text" placeholder="途经点' + (idx+1) + '" class="wp-input" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;"><span class="remove-wp" onclick="this.parentElement.remove()">×</span>';
+    list.appendChild(div);
+  }
+
+  // ==================== 高级选项折叠（修复版） ====================
+  function toggleAdv(id) {
+    const body = document.getElementById(id + 'Body');
+    const arrow = document.getElementById(id + 'Arrow');
+    if (!body) return;
+    const isOpen = body.classList.toggle('open');
+    if (arrow) arrow.textContent = isOpen ? '▼' : '▶';
+  }
+
+  // ==================== 路线规划 ====================
+  function doRoute() {
+    if (!mapReady || !AMapLib) { showToast('地图尚未加载完成，请稍候'); return; }
+    const fromVal = document.getElementById('routeFrom').value.trim();
+    const toVal = document.getElementById('routeTo').value.trim();
+    if (!toVal) { showToast('请输入终点'); return; }
+
+    document.getElementById('routeResult').innerHTML = '<div style="text-align:center;padding:12px;"><div class="spinner" style="margin:0 auto 8px;"></div><div style="font-size:13px;color:var(--text-secondary);">路线规划中...</div></div>';
+
+    try {
+      if (currentMode === 'driving') doDrivingRoute(fromVal, toVal);
+      else if (currentMode === 'walking') doWalkingRoute(fromVal, toVal);
+      else if (currentMode === 'riding') doRidingRoute(fromVal, toVal);
+      else if (currentMode === 'transit') doTransitRoute(fromVal, toVal);
+    } catch (e) {
+      console.error('路线规划异常:', e);
+      document.getElementById('routeResult').innerHTML = '';
+      showToast('路线规划出错: ' + e.message);
+    }
+  }
+
+  function doDrivingRoute(from, to) {
+    const driving = new AMapLib.Driving({ map: map, policy: getDrivingPolicy() });
+    const wpInputs = document.querySelectorAll('.wp-input');
+    const waypoints = [];
+    wpInputs.forEach(inp => { if (inp.value.trim()) waypoints.push(inp.value.trim()); });
+
+    const opts = {};
+    if (waypoints.length > 0) opts.waypoints = waypoints;
+
+    driving.search(from || undefined, to, opts, function(status, result) {
+      if (status === 'complete') {
+        renderRouteResult(result, 'driving');
+      } else {
+        document.getElementById('routeResult').innerHTML = '';
+        showToast('路线规划失败: ' + (result || '未知错误'));
+      }
+    });
+  }
+
+  function doWalkingRoute(from, to) {
+    const walking = new AMapLib.Walking({ map: map });
+    walking.search(from || undefined, to, function(status, result) {
+      if (status === 'complete') renderRouteResult(result, 'walking');
+      else { document.getElementById('routeResult').innerHTML = ''; showToast('路线规划失败'); }
+    });
+  }
+
+  function doRidingRoute(from, to) {
+    const riding = new AMapLib.Riding({ map: map });
+    riding.search(from || undefined, to, function(status, result) {
+      if (status === 'complete') renderRouteResult(result, 'riding');
+      else { document.getElementById('routeResult').innerHTML = ''; showToast('路线规划失败'); }
+    });
+  }
+
+  function doTransitRoute(from, to) {
+    const city = document.getElementById('transitCity').value.trim();
+    if (!city) { showToast('公交模式请输入城市名'); document.getElementById('routeResult').innerHTML = ''; return; }
+    const transfer = new AMapLib.Transfer({ map: map, city: city, policy: getTransitPolicy() });
+    transfer.search(from || undefined, to, function(status, result) {
+      if (status === 'complete') renderRouteResult(result, 'transit');
+      else { document.getElementById('routeResult').innerHTML = ''; showToast('路线规划失败'); }
+    });
+  }
+
+  function getDrivingPolicy() {
+    const val = document.getElementById('drivingPolicy').value;
+    const m = { fastest: 0, shortest: 1, least_fee: 2, no_highway: 3, avoid_jam: 4 };
+    return m[val] || 0;
+  }
+  function getTransitPolicy() {
+    const val = document.getElementById('transitPolicy').value;
+    const m = { fastest: 0, least_cost: 1, least_walk: 2, most_comfort: 3, no_subway: 4 };
+    return m[val] || 0;
+  }
+
+  function renderRouteResult(result, type) {
+    const container = document.getElementById('routeResult');
+    let distance = 0, time = 0, steps = [];
+
+    try {
+      if ((type === 'driving' || type === 'walking') && result.routes && result.routes.length > 0) {
+        const r = result.routes[0];
+        distance = r.distance; time = r.time;
+        if (r.steps) r.steps.forEach(s => steps.push({ instruction: s.instruction, distance: s.distance, time: s.time || 0 }));
+      } else if (type === 'riding' && result.routes && result.routes.length > 0) {
+        const r = result.routes[0];
+        distance = r.distance; time = r.time;
+        if (r.rides) r.rides.forEach(s => steps.push({ instruction: s.instruction, distance: s.distance, time: 0 }));
+      } else if (type === 'transit' && result.plans && result.plans.length > 0) {
+        const r = result.plans[0];
+        distance = r.distance || 0; time = r.time || 0;
+        if (r.segments) {
+          r.segments.forEach(seg => {
+            let inst = '';
+            if (seg.transit_mode === 'WALK' && seg.walking && seg.walking.steps) {
+              seg.walking.steps.forEach(s => { inst += s.instruction + ' '; });
+            } else if (seg.transit_mode === 'TRANSIT' && seg.transit) {
+              const t = seg.transit;
+              inst = '乘坐 ' + (t.lines && t.lines[0] ? t.lines[0].name : '公共交通');
+            }
+            if (inst) steps.push({ instruction: inst, distance: seg.distance || 0, time: seg.time || 0 });
+          });
+        }
+      }
+    } catch (e) { console.error('解析路线结果出错:', e); }
+
+    const modeNames = { driving: '驾车', walking: '步行', riding: '骑行', transit: '公交' };
+    const distStr = distance >= 1000 ? (distance / 1000).toFixed(1) + ' 公里' : distance + ' 米';
+    const timeStr = time >= 3600 ? Math.floor(time / 3600) + ' 小时 ' + Math.floor((time % 3600) / 60) + ' 分钟' : Math.ceil(time / 60) + ' 分钟';
+
+    let html = '<div class="route-summary">';
+    html += '<div style="font-size:12px;color:var(--text-secondary);">' + modeNames[type] + '路线</div>';
+    html += '<div class="route-time">' + timeStr + '</div>';
+    html += '<div class="route-dist">总距离 ' + distStr + '</div></div>';
+
+    if (steps.length > 0) {
+      html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">路线详情</div>';
+      steps.forEach((s, i) => {
+        const meta = [];
+        if (s.distance > 0) meta.push(s.distance >= 1000 ? (s.distance/1000).toFixed(1)+'km' : s.distance+'m');
+        if (s.time > 0) meta.push(Math.ceil(s.time/60)+'min');
+        html += '<div class="route-step"><div class="step-dot"></div><div><div class="step-text">' + (i+1) + '. ' + s.instruction + '</div>';
+        if (meta.length) html += '<div class="step-meta">' + meta.join(' · ') + '</div>';
+        html += '</div></div>';
+      });
+    }
+
+    container.innerHTML = html;
+    showToast('路线规划完成');
+  }
+
+  // ==================== POI 搜索 ====================
+  function doSearch() {
+    if (!mapReady || !AMapLib) { showToast('地图尚未加载完成，请稍候'); return; }
+    const keyword = document.getElementById('searchKeyword').value.trim();
+    if (!keyword) { showToast('请输入搜索关键词'); return; }
+
+    clearSearchOverlays();
+    document.getElementById('searchResult').innerHTML = '<div style="text-align:center;padding:12px;"><div class="spinner" style="margin:0 auto 8px;"></div><div style="font-size:13px;color:var(--text-secondary);">搜索中...</div></div>';
+
+    const cityVal = document.getElementById('searchCity').value.trim();
+    const lngVal = document.getElementById('searchCenterLng').value;
+    const latVal = document.getElementById('searchCenterLat').value;
+    const radiusVal = document.getElementById('searchRadius').value || 3000;
+    const isNearby = lngVal && latVal;
+
+    const placeSearch = new AMapLib.PlaceSearch({ pageSize: searchPageSize, pageIndex: searchPageIndex, extensions: 'all' });
+
+    if (isNearby) {
+      placeSearch.searchNearBy(keyword, [parseFloat(lngVal), parseFloat(latVal)], parseInt(radiusVal), function(status, result) {
+        if (status === 'complete' && result.poiList) renderSearchResult(result.poiList, true);
+        else { document.getElementById('searchResult').innerHTML = ''; showToast('搜索失败'); }
+      });
+    } else {
+      placeSearch.search(keyword, cityVal || undefined, function(status, result) {
+        if (status === 'complete' && result.poiList) renderSearchResult(result.poiList, false);
+        else { document.getElementById('searchResult').innerHTML = ''; showToast('搜索失败'); }
+      });
+    }
+  }
+
+  function renderSearchResult(poiList, isNearby) {
+    const container = document.getElementById('searchResult');
+    const pois = poiList.pois || [];
+    searchTotalCount = poiList.count || 0;
+
+    let html = '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">找到 ' + searchTotalCount + ' 个结果</div>';
+
+    pois.forEach(poi => {
+      const dist = poi.distance ? (poi.distance >= 1000 ? (poi.distance/1000).toFixed(1)+'km' : poi.distance+'m') : '';
+      html += '<div class="poi-card" onclick="panToPOI(' + poi.location.lng + ',' + poi.location.lat + ')">';
+      html += '<div class="poi-name">' + poi.name + '</div>';
+      html += '<div class="poi-addr">' + (poi.address || '暂无地址') + '</div>';
+      if (dist) html += '<div class="poi-dist">距离 ' + dist + '</div>';
+      html += '<div class="poi-actions">';
+      html += '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();setAsStart(\'' + poi.name.replace(/'/g,"\\'") + '\')">设为起点</button>';
+      html += '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();setAsEnd(\'' + poi.name.replace(/'/g,"\\'") + '\')">设为终点</button>';
+      html += '</div></div>';
+      addPOIMarker(poi);
+    });
+
+    if (searchTotalCount > searchPageSize) {
+      const totalPages = Math.ceil(searchTotalCount / searchPageSize);
+      html += '<div class="pagination">';
+      html += '<button ' + (searchPageIndex <= 1 ? 'disabled' : '') + ' onclick="changePage(-1)"><</button>';
+      html += '<span style="padding:4px 8px;font-size:12px;">' + searchPageIndex + ' / ' + totalPages + '</span>';
+      html += '<button ' + (searchPageIndex >= totalPages ? 'disabled' : '') + ' onclick="changePage(1)">></button>';
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+    showToast('搜索完成，共 ' + searchTotalCount + ' 个结果');
+  }
+
+  function addPOIMarker(poi) {
+    const marker = new AMapLib.Marker({
+      position: [poi.location.lng, poi.location.lat], title: poi.name,
+      offset: new AMapLib.Pixel(-13, -30),
+    });
+    marker.setContent('<div style="background:var(--primary);color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);">' + poi.name + '</div>');
+    const infoWindow = new AMapLib.InfoWindow({
+      content: '<div style="padding:8px;max-width:260px;"><div style="font-weight:600;margin-bottom:4px;">' + poi.name + '</div><div style="font-size:12px;color:#666;">' + (poi.address || '') + '</div>' + (poi.tel ? '<div style="font-size:12px;color:#666;margin-top:2px;">' + poi.tel + '</div>' : '') + '</div>',
+      offset: new AMapLib.Pixel(0, -30),
+    });
+    marker.on('click', function() { infoWindow.open(map, marker.getPosition()); });
+    marker.setMap(map);
+    poiMarkers.push(marker);
+  }
+
+  function clearSearchOverlays() { poiMarkers.forEach(m => m.setMap(null)); poiMarkers = []; }
+  function panToPOI(lng, lat) { if (map) { map.setCenter([lng, lat]); map.setZoom(16); } }
+
+  function setAsStart(name) {
+    document.getElementById('routeFrom').value = name;
+    switchTab('route');
+    showToast('已设为起点: ' + name);
+  }
+  function setAsEnd(name) {
+    document.getElementById('routeTo').value = name;
+    switchTab('route');
+    showToast('已设为终点: ' + name);
+  }
+
+  function changePage(delta) {
+    searchPageIndex += delta;
+    if (searchPageIndex < 1) searchPageIndex = 1;
+    doSearch();
+  }
+
+  // ==================== 地图样式 ====================
+  function initStyleGrid() {
+    const grid = document.getElementById('styleGrid');
+    let html = '';
+    MAP_STYLES.forEach(s => {
+      html += '<div class="style-item' + (s.key === currentStyle ? ' active' : '') + '" onclick="setMapStyle(\'' + s.key + '\')">';
+      html += '<div>' + s.name + '</div></div>';
+    });
+    grid.innerHTML = html;
+  }
+
+  function setMapStyle(style) {
+    if (!map) return;
+    currentStyle = style;
+    map.setMapStyle('amap://styles/' + style);
+    initStyleGrid();
+    showToast('已切换为 ' + style + ' 样式');
+  }
+
+  function onZoomChange() { if (map) map.setZoom(parseInt(document.getElementById('zoomSlider').value)); }
+  function onPitchChange() { if (map) map.setPitch(parseInt(document.getElementById('pitchSlider').value)); }
+  function onRotationChange() { if (map) map.setRotation(parseInt(document.getElementById('rotationSlider').value)); }
+
+  // ==================== 定位 ====================
+  function locateMe() {
+    if (!mapReady || !AMapLib) return;
+    try {
+      const geo = new AMapLib.Geolocation({ enableHighAccuracy: true, timeout: 10000 });
+      geo.getCurrentPosition(function(status, result) {
+        if (status === 'complete') {
+          map.setCenter([result.position.lng, result.position.lat]);
+          map.setZoom(15);
+          showToast('已定位到当前位置');
+        } else {
+          showToast('定位失败，请检查权限');
+        }
+      });
+    } catch (e) {
+      console.error('定位异常:', e);
+    }
+  }
+
+  // ==================== 分享 ====================
+  function openShareModal() {
+    if (!map) { showToast('地图未加载'); return; }
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+    const url = window.location.origin + window.location.pathname + '?lng=' + center.lng.toFixed(6) + '&lat=' + center.lat.toFixed(6) + '&zoom=' + zoom + '&style=' + currentStyle;
+    document.getElementById('shareText').value = url;
+    document.getElementById('shareModal').classList.add('show');
+  }
+  function closeShareModal() { document.getElementById('shareModal').classList.remove('show'); }
+  function copyShareLink() {
+    const text = document.getElementById('shareText').value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => { showToast('已复制到剪贴板'); closeShareModal(); });
+    } else {
+      document.getElementById('shareText').select();
+      document.execCommand('copy');
+      showToast('已复制'); closeShareModal();
+    }
+  }
+
+  // ==================== 输入提示 ====================
+  let acTimer = null;
+  function onRouteInput(field) {
+    clearTimeout(acTimer);
+    const input = field === 'from' ? document.getElementById('routeFrom') : document.getElementById('routeTo');
+    const acDiv = field === 'from' ? document.getElementById('acFrom') : document.getElementById('acTo');
+    const val = input.value.trim();
+    input.nextElementSibling.style.display = val ? 'inline' : 'none';
+    if (!val || !AMapLib) { acDiv.style.display = 'none'; return; }
+
+    acTimer = setTimeout(() => {
+      try {
+        const auto = new AMapLib.AutoComplete({ city: '全国' });
+        auto.search(val, function(status, result) {
+          if (status === 'complete' && result.tips) {
+            let html = '';
+            result.tips.forEach(tip => {
+              if (tip.location) {
+                html += '<div class="ac-item" onclick="selectTip(\'' + field + '\',\'' + tip.name.replace(/'/g,"\\'") + '\')">' + tip.name + '<span style="color:#999;margin-left:4px;font-size:11px;">' + (tip.district || '') + '</span></div>';
+              }
+            });
+            acDiv.innerHTML = html;
+            acDiv.style.display = html ? 'block' : 'none';
+          }
+        });
+      } catch (e) { console.error('自动补全出错:', e); }
+    }, 300);
+  }
+
+  function onSearchInput() {
+    const input = document.getElementById('searchKeyword');
+    const acDiv = document.getElementById('acSearch');
+    const val = input.value.trim();
+    input.nextElementSibling.style.display = val ? 'inline' : 'none';
+    if (!val || !AMapLib) { acDiv.style.display = 'none'; return; }
+
+    clearTimeout(acTimer);
+    acTimer = setTimeout(() => {
+      try {
+        const auto = new AMapLib.AutoComplete({ city: '全国' });
+        auto.search(val, function(status, result) {
+          if (status === 'complete' && result.tips) {
+            let html = '';
+            result.tips.forEach(tip => {
+              html += '<div class="ac-item" onclick="document.getElementById(\'searchKeyword\').value=\'' + tip.name.replace(/'/g,"\\'") + '\';document.getElementById(\'acSearch\').style.display=\'none\'">' + tip.name + '<span style="color:#999;margin-left:4px;font-size:11px;">' + (tip.district || '') + '</span></div>';
+            });
+            acDiv.innerHTML = html;
+            acDiv.style.display = html ? 'block' : 'none';
+          }
+        });
+      } catch (e) { console.error('自动补全出错:', e); }
+    }, 300);
+  }
+
+  function selectTip(field, name) {
+    const input = field === 'from' ? document.getElementById('routeFrom') : document.getElementById('routeTo');
+    input.value = name;
+    const acDiv = field === 'from' ? document.getElementById('acFrom') : document.getElementById('acTo');
+    acDiv.style.display = 'none';
+  }
+
+  function clearInput(id) {
+    document.getElementById(id).value = '';
+    document.getElementById(id).nextElementSibling.style.display = 'none';
+    const acMap = { routeFrom: 'acFrom', routeTo: 'acTo', searchKeyword: 'acSearch' };
+    if (acMap[id]) document.getElementById(acMap[id]).style.display = 'none';
+  }
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-input-wrap') && !e.target.closest('.ac-dropdown')) {
+      document.querySelectorAll('.ac-dropdown').forEach(el => el.style.display = 'none');
+    }
+  });
+
+  // ==================== 工具 ====================
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function restoreFromURL() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const lng = parseFloat(params.get('lng'));
+      const lat = parseFloat(params.get('lat'));
+      const zoom = parseInt(params.get('zoom'));
+      const style = params.get('style');
+      if (lng && lat && map) map.setCenter([lng, lat]);
+      if (zoom && map) map.setZoom(zoom);
+      if (style) setMapStyle(style);
+    } catch (e) {}
+  }
+
+  // ==================== 启动 ====================
+  window.onload = loadAMapScript;
+</script>
+
+</body>
+</html>
