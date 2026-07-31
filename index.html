@@ -589,12 +589,19 @@ function doSearch(){
   clrPOI();
   document.getElementById('searchRes').innerHTML='<div style="text-align:center;padding:12px"><div class="spin" style="margin:0 auto 8px"></div><div style="font-size:13px;color:var(--txt2)">搜索中...</div></div>';
   var city=document.getElementById('sCityIpt').value.trim();
+  var cityParam=extractCity(city);
   var lng=document.getElementById('sLng').value,lat=document.getElementById('sLat').value,rad=parseInt(document.getElementById('sRad').value)||3000;
   var url;
+  // 优先使用周边搜索：有手动坐标 或 已定位(自动填充坐标)
   if(lng&&lat){
     url='https://restapi.amap.com/v3/place/around?key='+KEY+'&location='+lng+','+lat+'&radius='+rad+'&keywords='+encodeURIComponent(kw)+'&offset=10&extensions=all';
+    if(cityParam)url+='&city='+encodeURIComponent(cityParam);
+  }else if(myPos){
+    // 已定位但没手动填坐标，自动用当前位置做周边搜索
+    url='https://restapi.amap.com/v3/place/around?key='+KEY+'&location='+myPos[0]+','+myPos[1]+'&radius='+rad+'&keywords='+encodeURIComponent(kw)+'&offset=10&extensions=all';
+    if(cityParam)url+='&city='+encodeURIComponent(cityParam);
   }else{
-    url='https://restapi.amap.com/v3/place/text?key='+KEY+'&keywords='+encodeURIComponent(kw)+'&city='+encodeURIComponent(city||'')+'&offset=10&extensions=all';
+    url='https://restapi.amap.com/v3/place/text?key='+KEY+'&keywords='+encodeURIComponent(kw)+'&city='+encodeURIComponent(cityParam||city||'')+'&offset=10&extensions=all';
   }
   fetch(url).then(function(r){return r.json()}).then(function(data){
     if(data.status==='1'&&data.pois&&data.pois.length>0){
@@ -756,7 +763,7 @@ function onAC(type){
   var xbBtn=ipt.parentElement.querySelector('.xb');if(xbBtn)xbBtn.style.display=v?'inline':'none';
   if(!v){document.getElementById('acBox').style.display='none';return}
   acTmr=setTimeout(function(){
-    var city=type==='city'||type==='sCity'?'':document.getElementById('cityIpt').value.trim();
+    var city=type==='city'||type==='sCity'?'':extractCity(document.getElementById('cityIpt').value.trim());
     var url='https://restapi.amap.com/v3/assistant/inputtips?key='+KEY+'&keywords='+encodeURIComponent(v)+'&datatype=json';
     if(city)url+='&city='+encodeURIComponent(city);
     fetch(url).then(function(r){return r.json()}).then(function(data){
