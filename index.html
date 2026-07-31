@@ -334,7 +334,10 @@ function toggleC(id){
 // 途经点
 function addWP(){var l=document.getElementById('wpList'),i=l.children.length;if(i>=16){toast('最多16个途经点');return}var d=document.createElement('div');d.className='wp-row';d.innerHTML='<input type="text" placeholder="途经点'+(i+1)+'"><button class="del" onclick="this.parentElement.remove()">×</button>';l.appendChild(d)}
 
-// ==================== 路线规划（修复：先 geocode 再规划）====================
+// ==================== 路线规划（改用 REST API，避免 JSAPI 域名白名单限制）====================
+var routeLine=null; // 当前路线折线
+var routeMks=[];    // 起终点标记
+
 function doRoute(){
   if(!ready){toast('地图尚未加载');return}
   var fromStr=document.getElementById('fromIpt').value.trim();
@@ -346,13 +349,10 @@ function doRoute(){
   var tasks=[];
   var fromPos=null,toPos=null,wpPositions=[];
 
-  // 起点
   if(fromStr){
     tasks.push(geocode(fromStr).then(function(p){fromPos=p}));
   }
-  // 终点
   tasks.push(geocode(toStr).then(function(p){toPos=p}));
-  // 途经点
   var wpEls=document.querySelectorAll('.wp-row input');
   wpEls.forEach(function(el){
     var v=el.value.trim();
@@ -361,65 +361,179 @@ function doRoute(){
 
   Promise.all(tasks).then(function(){
     if(!toPos){toast('无法解析终点地址');document.getElementById('routeRes').innerHTML='';return}
+    var fromLngLat=fromPos?fromPos.lng+','+fromPos.lat:'';
+    var toLngLat=toPos.lng+','+toPos.lat;
+    var wpStr=wpPositions.map(function(p){return p.lng+','+p.lat}).join(';');
     try{
-      if(mode==='driving') rDriv(fromPos,toPos,wpPositions);
-      else if(mode==='walking') rWalk(fromPos,toPos);
-      else if(mode==='riding') rRide(fromPos,toPos);
-      else if(mode==='transit') rTrans(fromPos,toPos);
+      if(mode==='driving') rDrivRest(fromLngLat,toLngLat,wpStr);
+      else if(mode==='walking') rWalkRest(fromLngLat,toLngLat);
+      else if(mode==='riding') rRideRest(fromLngLat,toLngLat);
+      else if(mode==='transit') rTransRest(fromLngLat,toLngLat);
     }catch(e){console.error(e);document.getElementById('routeRes').innerHTML='';toast('规划出错: '+e.message)}
   }).catch(function(e){
     console.error(e);document.getElementById('routeRes').innerHTML='';toast('地址解析失败: '+e.message);
   });
 }
 
-function rDriv(fromPos,toPos,wpPos){
+// 驾车 - REST API
+function rDrivRest(from,to,wp){
   var pol=parseInt(document.getElementById('dPolSel').value);
-  var driving=new A.Driving({map:map,policy:pol});
-  if(wpPos.length>0){
-    driving.search(fromPos,toPos,{waypoints:wpPos},function(s,r){onRouteDone(s,r,'driving')});
-  }else{
-    driving.search(fromPos,toPos,function(s,r){onRouteDone(s,r,'driving')});
-  }
+  var url='https://restapi.amap.com/v3/direction/driving?origin='+from+'&destination='+to+'&key='+KEY+'&strategy='+pol+'&extensions=all';
+  if(wp) url+='&waypoints='+wp;
+  fetch(url).then(function(r){return r.json()}).then(function(data){
+    if(data.status==='1'&&data.route&&data.route.paths&&data.route.paths.length>0){
+      renderDrivingRest(data.route);
+    }else{
+      document.getElementById('routeRes').innerHTML='';toast('路线规划失败: '+(data.info||''));
+    }
+  }).catch(function(e){document.getElementById('routeRes').innerHTML='';toast('网络错误: '+e.message)});
 }
 
-function rWalk(fromPos,toPos){var w=new A.Walking({map:map});w.search(fromPos,toPos,function(s,r){onRouteDone(s,r,'walking')})}
-function rRide(fromPos,toPos){var r=new A.Riding({map:map});r.search(fromPos,toPos,function(s,r){onRouteDone(s,r,'riding')})}
-function rTrans(fromPos,toPos){
+// 步行 - REST API
+function rWalkRest(from,to){
+  var url='https://restapi.amap.com/v3/direction/walking?origin='+from+'&destination='+to+'&key='+KEY;
+  fetch(url).then(function(r){return r.json()}).then(function(data){
+    if(data.status==='1'&&data.route&&data.route.paths&&data.route.paths.length>0){
+      renderWalkingRest(data.route);
+    }else{
+      document.getElementById('routeRes').innerHTML='';toast('路线规划失败: '+(data.info||''));
+    }
+  }).catch(function(e){document.getElementById('routeRes').innerHTML='';toast('网络错误: '+e.message)});
+}
+
+// 骑行 - REST API
+function rRideRest(from,to){
+  var url='https://restapi.amap.com/v4/direction/bicycling?origin='+from+'&destination='+to+'&key='+KEY;
+  fetch(url).then(function(r){return r.json()}).then(function(data){
+    if(data.status==='1'&&data.data&&data.data.paths&&data.data.paths.length>0){
+      renderRidingRest(data.data);
+    }else{
+      document.getElementById('routeRes').innerHTML='';toast('路线规划失败');
+    }
+  }).catch(function(e){document.getElementById('routeRes').innerHTML='';toast('网络错误: '+e.message)});
+}
+
+// 公交 - REST API
+function rTransRest(from,to){
   var city=document.getElementById('cityIpt').value.trim();
   if(!city){toast('公交模式请输入城市');document.getElementById('routeRes').innerHTML='';return}
   var pol=parseInt(document.getElementById('tPolSel').value);
-  var t=new A.Transfer({map:map,city:city,policy:pol});
-  t.search(fromPos,toPos,function(s,r){onRouteDone(s,r,'transit')});
+  var url='https://restapi.amap.com/v3/direction/transit/integrated?origin='+from+'&destination='+to+'&city='+encodeURIComponent(city)+'&key='+KEY+'&strategy='+pol+'&extensions=all';
+  fetch(url).then(function(r){return r.json()}).then(function(data){
+    if(data.status==='1'&&data.route&&data.route.transits&&data.route.transits.length>0){
+      renderTransitRest(data.route);
+    }else{
+      document.getElementById('routeRes').innerHTML='';toast('路线规划失败: '+(data.info||'无结果'));
+    }
+  }).catch(function(e){document.getElementById('routeRes').innerHTML='';toast('网络错误: '+e.message)});
 }
 
-function onRouteDone(status,result,type){
-  if(status==='complete') renderRoute(result,type);
-  else{document.getElementById('routeRes').innerHTML='';toast('路线规划失败')}
+// ==================== 渲染路线结果（REST API 数据格式）====================
+function clearRouteLine(){
+  if(routeLine){routeLine.setMap(null);routeLine=null}
+  routeMks.forEach(function(m){m.setMap(null)});routeMks=[];
 }
 
-function renderRoute(result,type){
-  var c=document.getElementById('routeRes'),dist=0,time=0,steps=[];
-  try{
-    if((type==='driving'||type==='walking')&&result.routes&&result.routes[0]){
-      var r=result.routes[0];dist=r.distance;time=r.time;
-      if(r.steps)r.steps.forEach(function(s){steps.push({ins:s.instruction,d:s.distance,t:s.time||0})});
-    }else if(type==='riding'&&result.routes&&result.routes[0]){
-      var r=result.routes[0];dist=r.distance;time=r.time;
-      if(r.rides)r.rides.forEach(function(s){steps.push({ins:s.instruction,d:s.distance,t:0})});
-    }else if(type==='transit'&&result.plans&&result.plans[0]){
-      var r=result.plans[0];dist=r.distance||0;time=r.time||0;
-      if(r.segments)r.segments.forEach(function(seg){
-        var ins='';
-        if(seg.transit_mode==='WALK'&&seg.walking&&seg.walking.steps)seg.walking.steps.forEach(function(s){ins+=s.instruction+' '});
-        else if(seg.transit_mode==='TRANSIT'&&seg.transit)ins='乘坐 '+(seg.transit.lines&&seg.transit.lines[0]?seg.transit.lines[0].name:'公共交通');
-        if(ins)steps.push({ins:ins,d:seg.distance||0,t:seg.time||0});
+function drawPolyline(path){
+  clearRouteLine();
+  var line=new A.Polyline({path:path,strokeColor:'#4A90D9',strokeWeight:6,strokeOpacity:0.8,lineJoin:'round'});
+  line.setMap(map);
+  routeLine=line;
+  map.setBounds(line.getBounds(),false,[60,60,60,60]);
+}
+
+function addRouteMarker(pos,color,label){
+  var mk=new A.Marker({position:pos,offset:new A.Pixel(-12,-28),content:'<div style="background:'+color+';color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3)">'+label+'</div>'});
+  mk.setMap(map);routeMks.push(mk);
+}
+
+function renderDrivingRest(route){
+  var path=route.paths[0],dist=parseInt(path.distance),time=parseInt(path.duration);
+  var steps=[];
+  if(path.steps) path.steps.forEach(function(s){
+    steps.push({ins:s.instruction,d:parseInt(s.distance),t:parseInt(s.duration||0)});
+  });
+  // 收集所有 polyline 点
+  var allPts=[];
+  if(path.steps) path.steps.forEach(function(s){
+    if(s.polyline) allPts=allPts.concat(decodePolyline(s.polyline));
+  });
+  if(allPts.length>0) drawPolyline(allPts);
+  // 起终点标记
+  if(allPts.length>0){
+    addRouteMarker(allPts[0],'#4CAF50','起');
+    addRouteMarker(allPts[allPts.length-1],'#F44336','终');
+  }
+  renderRouteUI('driving',dist,time,steps);
+}
+
+function renderWalkingRest(route){
+  var path=route.paths[0],dist=parseInt(path.distance),time=parseInt(path.duration);
+  var steps=[];
+  if(path.steps) path.steps.forEach(function(s){
+    steps.push({ins:s.instruction,d:parseInt(s.distance),t:parseInt(s.duration||0)});
+  });
+  var allPts=[];
+  if(path.steps) path.steps.forEach(function(s){
+    if(s.polyline) allPts=allPts.concat(decodePolyline(s.polyline));
+  });
+  if(allPts.length>0) drawPolyline(allPts);
+  if(allPts.length>0){
+    addRouteMarker(allPts[0],'#4CAF50','起');
+    addRouteMarker(allPts[allPts.length-1],'#F44336','终');
+  }
+  renderRouteUI('walking',dist,time,steps);
+}
+
+function renderRidingRest(data){
+  var path=data.paths[0],dist=parseInt(path.distance),time=parseInt(path.duration);
+  var steps=[];
+  if(path.steps) path.steps.forEach(function(s){
+    steps.push({ins:s.instruction,d:parseInt(s.distance),t:0});
+  });
+  var allPts=[];
+  if(path.steps) path.steps.forEach(function(s){
+    if(s.polyline) allPts=allPts.concat(decodePolyline(s.polyline));
+  });
+  if(allPts.length>0) drawPolyline(allPts);
+  if(allPts.length>0){
+    addRouteMarker(allPts[0],'#4CAF50','起');
+    addRouteMarker(allPts[allPts.length-1],'#F44336','终');
+  }
+  renderRouteUI('riding',dist,time,steps);
+}
+
+function renderTransitRest(route){
+  var plan=route.transits[0],dist=parseInt(route.distance||0),time=parseInt(route.duration||0);
+  var steps=[];
+  var allPts=[];
+  if(plan.segments) plan.segments.forEach(function(seg){
+    var ins='';
+    if(seg.walking&&seg.walking.steps){
+      seg.walking.steps.forEach(function(s){
+        ins+=s.instruction+' ';
+        if(s.polyline) allPts=allPts.concat(decodePolyline(s.polyline));
       });
     }
-  }catch(e){console.error(e)}
+    if(seg.bus&&seg.bus.buslines&&seg.bus.buslines.length>0){
+      ins='乘坐 '+seg.bus.buslines[0].name;
+      if(seg.bus.buslines[0].polyline) allPts=allPts.concat(decodePolyline(seg.bus.buslines[0].polyline));
+    }
+    if(ins) steps.push({ins:ins,d:parseInt(seg.distance||0),t:parseInt(seg.duration||0)});
+  });
+  if(allPts.length>0) drawPolyline(allPts);
+  if(allPts.length>0){
+    addRouteMarker(allPts[0],'#4CAF50','起');
+    addRouteMarker(allPts[allPts.length-1],'#F44336','终');
+  }
+  renderRouteUI('transit',dist,time,steps);
+}
 
+function renderRouteUI(type,dist,time,steps){
   var mn={driving:'驾车',walking:'步行',riding:'骑行',transit:'公交'};
   var ds=dist>=1000?(dist/1000).toFixed(1)+' 公里':dist+' 米';
   var ts=time>=3600?Math.floor(time/3600)+' 时 '+Math.floor((time%3600)/60)+' 分':Math.ceil(time/60)+' 分钟';
+  var c=document.getElementById('routeRes');
   var h='<div class="rs"><div style="font-size:12px;color:var(--txt2)">'+mn[type]+'路线</div><div class="rt">'+ts+'</div><div class="rd">总距离 '+ds+'</div></div>';
   if(steps.length){h+='<div style="font-size:13px;font-weight:600;margin-bottom:8px">路线详情</div>';steps.forEach(function(s,i){
     var m=[];if(s.d>0)m.push(s.d>=1000?(s.d/1000).toFixed(1)+'km':s.d+'m');if(s.t>0)m.push(Math.ceil(s.t/60)+'min');
@@ -428,7 +542,23 @@ function renderRoute(result,type){
   c.innerHTML=h;toast('路线规划完成');
 }
 
-// ==================== POI 搜索 ====================
+// 解码高德 REST API 返回的编码折线（每个坐标用分号分隔，经纬度用逗号分隔）
+function decodePolyline(polyline){
+  if(!polyline) return [];
+  var pts=[];
+  // REST API 返回格式："lng1,lat1;lng2,lat2;..."
+  var pairs=polyline.split(';');
+  pairs.forEach(function(pair){
+    var parts=pair.split(',');
+    if(parts.length===2){
+      var lng=parseFloat(parts[0]),lat=parseFloat(parts[1]);
+      if(!isNaN(lng)&&!isNaN(lat)) pts.push([lng,lat]);
+    }
+  });
+  return pts;
+}
+
+// ==================== POI 搜索（改用 REST API）====================
 function doSearch(){
   if(!ready){toast('地图尚未加载');return}
   var kw=document.getElementById('kwIpt').value.trim();if(!kw){toast('请输入关键词');return}
@@ -436,33 +566,40 @@ function doSearch(){
   document.getElementById('searchRes').innerHTML='<div style="text-align:center;padding:12px"><div class="spin" style="margin:0 auto 8px"></div><div style="font-size:13px;color:var(--txt2)">搜索中...</div></div>';
   var city=document.getElementById('sCityIpt').value.trim();
   var lng=document.getElementById('sLng').value,lat=document.getElementById('sLat').value,rad=parseInt(document.getElementById('sRad').value)||3000;
-  var ps=new A.PlaceSearch({pageSize:10,extensions:'all'});
+  var url;
   if(lng&&lat){
-    ps.searchNearBy(kw,[parseFloat(lng),parseFloat(lat)],rad,function(s,r){
-      if(s==='complete'&&r.poiList)renderPOI(r.poiList);else{document.getElementById('searchRes').innerHTML='';toast('搜索失败')}
-    });
+    url='https://restapi.amap.com/v3/place/around?key='+KEY+'&location='+lng+','+lat+'&radius='+rad+'&keywords='+encodeURIComponent(kw)+'&offset=10&extensions=all';
   }else{
-    ps.search(kw,city||undefined,function(s,r){
-      if(s==='complete'&&r.poiList)renderPOI(r.poiList);else{document.getElementById('searchRes').innerHTML='';toast('搜索失败：'+(r.message||'无结果'))}
-    });
+    url='https://restapi.amap.com/v3/place/text?key='+KEY+'&keywords='+encodeURIComponent(kw)+'&city='+(encodeURIComponent(city)||'')+'&offset=10&extensions=all';
   }
+  fetch(url).then(function(r){return r.json()}).then(function(data){
+    if(data.status==='1'&&data.pois&&data.pois.length>0){
+      renderPOIRest(data.pois,data.count);
+    }else{
+      document.getElementById('searchRes').innerHTML='';
+      toast('搜索失败: '+(data.info||'无结果'));
+    }
+  }).catch(function(e){document.getElementById('searchRes').innerHTML='';toast('搜索错误: '+e.message)});
 }
 
-function renderPOI(list){
-  var c=document.getElementById('searchRes'),pois=list.pois||[],total=list.count||0;
+function renderPOIRest(pois,total){
+  var c=document.getElementById('searchRes');
   var h='<div style="font-size:13px;color:var(--txt2);margin-bottom:8px">找到 '+total+' 个结果</div>';
   pois.forEach(function(p){
-    var d=p.distance?(p.distance>=1000?(p.distance/1000).toFixed(1)+'km':p.distance+'m'):'';
-    h+='<div class="pc" onclick="panTo('+p.location.lng+','+p.location.lat+')"><div class="pn">'+p.name+'</div><div class="pa">'+(p.address||'')+'</div>';
+    var d=p.distance?(parseInt(p.distance)>=1000?(parseInt(p.distance)/1000).toFixed(1)+'km':p.distance+'m'):'';
+    var loc=p.location?p.location.split(','):[0,0];
+    h+='<div class="pc" onclick="panTo('+loc[0]+','+loc[1]+')"><div class="pn">'+p.name+'</div><div class="pa">'+(p.address||'')+'</div>';
     if(d)h+='<div class="pd">距离 '+d+'</div>';
     h+='<div class="pab"><button class="b bo bs" onclick="event.stopPropagation();setFrom(\''+esc(p.name)+'\')">设为起点</button><button class="b bo bs" onclick="event.stopPropagation();setTo(\''+esc(p.name)+'\')">设为终点</button></div></div>';
-    addPOIMk(p);
+    addPOIMkRest(p);
   });
   c.innerHTML=h;toast('搜索完成，共 '+total+' 个结果');
 }
 
-function addPOIMk(p){
-  var mk=new A.Marker({position:[p.location.lng,p.location.lat],title:p.name,offset:new A.Pixel(-13,-30)});
+function addPOIMkRest(p){
+  if(!p.location)return;
+  var loc=p.location.split(',');
+  var mk=new A.Marker({position:[parseFloat(loc[0]),parseFloat(loc[1])],title:p.name,offset:new A.Pixel(-13,-30)});
   mk.setContent('<div style="background:var(--pri);color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3)">'+p.name+'</div>');
   var iw=new A.InfoWindow({content:'<div style="padding:8px;max-width:260px"><div style="font-weight:600;margin-bottom:4px">'+p.name+'</div><div style="font-size:12px;color:#666">'+(p.address||'')+'</div>'+(p.tel?'<div style="font-size:12px;color:#666;margin-top:2px">'+p.tel+'</div>':'')+'</div>',offset:new A.Pixel(0,-30)});
   mk.on('click',function(){iw.open(map,mk.getPosition())});
@@ -489,23 +626,27 @@ function openShare(){if(!map){toast('地图未加载');return}var c=map.getCente
 function closeShare(){document.getElementById('shareModal').classList.remove('show')}
 function copyShare(){var t=document.getElementById('shareTxt').value;if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('已复制');closeShare()});else{document.getElementById('shareTxt').select();document.execCommand('copy');toast('已复制');closeShare()}}
 
-// 自动补全
+// 自动补全（改用 REST API）
 function onAC(type){
   clearTimeout(acTmr);
   var iptid=type==='from'?'fromIpt':type==='to'?'toIpt':'kwIpt';
   var ipt=document.getElementById(iptid);var v=ipt.value.trim();
   ipt.nextElementSibling.style.display=v?'inline':'none';
-  if(!v||!A){document.getElementById('acBox').style.display='none';return}
+  if(!v){document.getElementById('acBox').style.display='none';return}
   acTmr=setTimeout(function(){
-    try{var ac=new A.AutoComplete({city:'全国'});ac.search(v,function(s,r){
-      if(s==='complete'&&r.tips){
+    var url='https://restapi.amap.com/v3/assistant/inputtips?key='+KEY+'&keywords='+encodeURIComponent(v)+'&type=&datatype=json';
+    fetch(url).then(function(r){return r.json()}).then(function(data){
+      if(data.status==='1'&&data.tips){
         var box=document.getElementById('acBox'),h='';
-        r.tips.forEach(function(t){
-          if(t.location){var nm=esc(t.name),ds=t.district||'';h+='<div onclick="pickAC(\''+iptid+'\',\''+nm+'\')">'+t.name+'<span style="color:#999;margin-left:4px;font-size:11px">'+ds+'</span></div>'}
+        data.tips.forEach(function(t){
+          if(t.location){
+            var nm=esc(t.name),ds=t.district||'';
+            h+='<div onclick="pickAC(\''+iptid+'\',\''+nm+'\')">'+t.name+'<span style="color:#999;margin-left:4px;font-size:11px">'+ds+'</span></div>';
+          }
         });
         if(h){box.innerHTML=h;var rect=ipt.getBoundingClientRect();box.style.left=rect.left+'px';box.style.top=rect.bottom+'px';box.style.width=rect.width+'px';box.style.display='block'}else{box.style.display='none'}
       }
-    })}catch(e){console.error(e)}
+    }).catch(function(){});
   },300);
 }
 function pickAC(iptid,name){document.getElementById(iptid).value=name;document.getElementById('acBox').style.display='none'}
