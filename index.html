@@ -432,7 +432,7 @@ function switchTab(t){
   if(t==='hot')initHotTags();
   if(t==='tl')renderTl();
 }
-function togPnl(){var p=document.getElementById('pnl'),b=document.getElementById('pnlTog'),m=document.getElementById('mapBox');p.classList.toggle('hide');var hidden=p.classList.contains('hide');b.textContent=hidden?'▶':'◀';m.style.left=hidden?'0':'380px'}
+function togPnl(){var p=document.getElementById('pnl'),b=document.getElementById('pnlTog'),m=document.getElementById('mapBox');p.classList.toggle('hide');var hidden=p.classList.contains('hide');b.textContent=hidden?'▶':'◀';var isMobile=window.innerWidth<=768;if(isMobile){m.style.bottom=hidden?'0':'50vh';m.style.left='0'}else{m.style.left=hidden?'0':'380px';m.style.bottom='0'}}
 
 // 出行方式
 function setMode(m){
