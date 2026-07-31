@@ -230,7 +230,7 @@ window.onload=function(){
 
 // ==================== Geocoder 地理编码（地名→坐标）====================
 // 使用高德 REST API 替代 JSAPI 插件（JSAPI 插件在某些域名下回调不触发）
-function geocode(address){
+function geocode(address,city){
   return new Promise(function(resolve,reject){
     if(!address){resolve(null);return}
     // 如果已经是坐标格式 "lng,lat"，直接返回
@@ -239,29 +239,49 @@ function geocode(address){
       resolve(new A.LngLat(parseFloat(parts[0]),parseFloat(parts[1])));
       return;
     }
-    // 方案1：REST API 地理编码
-    fetch('https://restapi.amap.com/v3/geocode/geo?address='+encodeURIComponent(address)+'&key='+KEY)
-      .then(function(r){return r.json()})
-      .then(function(data){
-        if(data.status==='1'&&data.geocodes&&data.geocodes.length>0){
-          var loc=data.geocodes[0].location; // "lng,lat"
-          var lngLat=loc.split(',');
-          resolve(new A.LngLat(parseFloat(lngLat[0]),parseFloat(lngLat[1])));
-        }else{
-          // REST API 无结果，降级到 POI 搜索
-          searchPOI(address,resolve,reject);
-        }
-      })
-      .catch(function(e){
-        // REST API 网络失败，降级到 JSAPI Geocoder
-        tryJSAPIGeocoder(address,resolve,reject);
-      });
+    // 尝试从地图中心获取城市
+    var cityParam=city||'';
+    if(!cityParam&&map){
+      try{
+        var center=map.getCenter();
+        // 用逆地理编码获取当前城市
+        fetch('https://restapi.amap.com/v3/geocode/regeo?key='+KEY+'&location='+center.lng.toFixed(6)+','+center.lat.toFixed(6)+'&extensions=base')
+          .then(function(r){return r.json()}).then(function(data){
+            if(data.status==='1'&&data.regeocode){
+              cityParam=data.regeocode.addressComponent.city||data.regeocode.addressComponent.province||'';
+            }
+            doGeocode(address,cityParam,resolve,reject);
+          }).catch(function(){
+            doGeocode(address,'',resolve,reject);
+          });
+      }catch(e){
+        doGeocode(address,'',resolve,reject);
+      }
+    }else{
+      doGeocode(address,cityParam,resolve,reject);
+    }
+  });
+}
+function doGeocode(address,city,resolve,reject){
+  var url='https://restapi.amap.com/v3/geocode/geo?address='+encodeURIComponent(address)+'&key='+KEY;
+  if(city)url+='&city='+encodeURIComponent(city);
+  fetch(url).then(function(r){return r.json()}).then(function(data){
+    if(data.status==='1'&&data.geocodes&&data.geocodes.length>0){
+      var loc=data.geocodes[0].location; // "lng,lat"
+      var lngLat=loc.split(',');
+      resolve(new A.LngLat(parseFloat(lngLat[0]),parseFloat(lngLat[1])));
+    }else{
+      searchPOI(address,city,resolve,reject);
+    }
+  }).catch(function(e){
+    tryJSAPIGeocoder(address,resolve,reject);
   });
 }
 // 降级方案1：REST API POI 搜索
-function searchPOI(address,resolve,reject){
-  fetch('https://restapi.amap.com/v3/place/text?keywords='+encodeURIComponent(address)+'&key='+KEY+'&offset=3')
-    .then(function(r){return r.json()})
+function searchPOI(address,city,resolve,reject){
+  var url='https://restapi.amap.com/v3/place/text?keywords='+encodeURIComponent(address)+'&key='+KEY+'&offset=3';
+  if(city)url+='&city='+encodeURIComponent(city);
+  fetch(url).then(function(r){return r.json()})
     .then(function(data){
       if(data.status==='1'&&data.pois&&data.pois.length>0){
         var loc=data.pois[0].location.split(',');
