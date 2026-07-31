@@ -184,6 +184,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
     <div id="searchRes" style="margin-top:12px"></div>
   </div>
 
+  <!-- 热榜面板 -->
+  <div class="body" id="pHot" style="display:none">
+    <div class="grp"><label>搜索城市或地点</label>
+      <div class="iwrap"><span class="ic">🔥</span><input id="hotIpt" placeholder="如：成都、杭州景点、三亚酒店" onkeydown="if(event.key==='Enter')doHotSearch()"><button class="xb" onclick="document.getElementById('hotIpt').value='';initHotTags()">×</button></div>
+    </div>
+    <div id="hotTags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+    <div id="hotRes"></div>
+  </div>
 
 </div>
 
