@@ -642,54 +642,81 @@ function initGrid(){
 }
 function setStyle(s){if(!map)return;curStyle=s;map.setMapStyle('amap://styles/'+s);initGrid();toast('已切换: '+SNAME[s])}
 
-// 定位 - 多级策略确保精准
+// 定位 - 高精度策略：watchPosition 持续获取直到精度<200m
+var watchId=null,bestPos=null,bestAcc=Infinity;
 function locateMe(){
   if(!ready)return;
   var btns=document.querySelectorAll('.loc-btn-sm');
   btns.forEach(function(b){b.classList.add('spin-anim')});
-  // 策略1: 浏览器高精度定位
+  bestPos=null;bestAcc=Infinity;
   if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(function(pos){
-      var lng=pos.coords.longitude,lat=pos.coords.latitude;
-      myPos=[lng,lat];
-      map.setCenter(myPos);map.setZoom(15);
-      reverseGeo(lng,lat);
+    // 用 watchPosition 持续监听，GPS 精度会逐步收敛
+    watchId=navigator.geolocation.watchPosition(function(pos){
+      var lng=pos.coords.longitude,lat=pos.coords.latitude,acc=pos.coords.accuracy||9999;
+      // 记录精度最好的一次
+      if(acc<bestAcc){
+        bestAcc=acc;bestPos=[lng,lat,acc];
+        myPos=[lng,lat];
+        map.setCenter(myPos);
+        // 精度够好时立即锁定
+        if(acc<200){
+          map.setZoom(16);
+          finishLocate(lng,lat,'高精度定位 ('+Math.round(acc)+'m)');
+          clearWatch();
+        }else if(acc<500){
+          map.setZoom(15);
+        }else{
+          map.setZoom(14);
+        }
+      }
     },function(){
-      // 策略2: 浏览器定位失败→IP定位
-      ipLocate();
-    },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
+      // watch 报错→尝试 IP 定位兜底
+      clearWatch();ipLocate();
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+    // 8秒后如果还没拿到<200m精度，取当前最佳结果
+    setTimeout(function(){
+      if(bestPos){
+        map.setZoom(bestAcc<500?15:14);
+        finishLocate(bestPos[0],bestPos[1],'定位完成 ('+Math.round(bestAcc)+'m)');
+      }else{
+        ipLocate();
+      }
+    },8000);
   }else{
     ipLocate();
   }
 }
-// 策略2: IP定位 (REST API)
+function clearWatch(){
+  if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
+}
+// IP定位兜底（精度通常几公里）
 function ipLocate(){
   fetch('https://restapi.amap.com/v3/ip?key='+KEY)
     .then(function(r){return r.json()})
     .then(function(data){
       if(data.status==='1'&&data.rectangle){
-        // rectangle: "lng1,lat1;lng2,lat2" 取中心
         var pts=data.rectangle.split(';');
         var p1=pts[0].split(','),p2=pts[1].split(',');
         var lng=(parseFloat(p1[0])+parseFloat(p2[0]))/2;
         var lat=(parseFloat(p1[1])+parseFloat(p2[1]))/2;
-        myPos=[lng,lat];
-        map.setCenter(myPos);map.setZoom(13);
-        reverseGeo(lng,lat);
+        myPos=[lng,lat];map.setCenter(myPos);map.setZoom(13);
+        finishLocate(lng,lat,'IP定位');
       }else{
-        // 策略3: 用地图中心
         var c=map.getCenter();
-        reverseGeo(c.lng,c.lat);
-        toast('IP定位失败，已使用地图中心');
+        finishLocate(c.lng,c.lat,'使用地图中心');
       }
     })
     .catch(function(){
       var c=map.getCenter();
-      reverseGeo(c.lng,c.lat);
+      finishLocate(c.lng,c.lat,'定位失败');
     });
 }
+// 定位完成：逆编码+写输入框+停止动画
+function finishLocate(lng,lat,hint){
+  reverseGeo(lng,lat,hint);
+}
 // 逆地理编码：坐标→地址名
-function reverseGeo(lng,lat){
+function reverseGeo(lng,lat,hint){
   fetch('https://restapi.amap.com/v3/geocode/regeo?key='+KEY+'&location='+lng.toFixed(6)+','+lat.toFixed(6)+'&extensions=base')
     .then(function(r){return r.json()})
     .then(function(data){
@@ -705,15 +732,14 @@ function reverseGeo(lng,lat){
         document.getElementById('cityIpt').placeholder='输入位置或城市名';
         document.getElementById('sCityIpt').placeholder='输入位置或城市名';
       }
-      // 停止按钮动画
       var btns=document.querySelectorAll('.loc-btn-sm');
       btns.forEach(function(b){b.classList.remove('spin-anim')});
-      toast('已定位: '+locText);
+      toast((hint||'已定位')+': '+locText);
     })
     .catch(function(){
       var btns=document.querySelectorAll('.loc-btn-sm');
       btns.forEach(function(b){b.classList.remove('spin-anim')});
-      toast('定位完成');
+      toast(hint||'定位完成');
     });
 }
 
