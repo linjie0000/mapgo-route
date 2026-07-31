@@ -9,7 +9,6 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);overflow:hidden;height:100vh}
 
-/* 顶栏 */
 .hdr{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--card);box-shadow:var(--sh);display:flex;align-items:center;padding:0 12px;height:52px;gap:8px}
 .hdr .logo{font-size:18px;font-weight:700;color:var(--pri);white-space:nowrap}
 .hdr .logo em{font-style:normal;font-size:12px;font-weight:400;color:var(--txt2);margin-left:4px}
@@ -17,7 +16,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .hdr .rb button{padding:4px 10px;border-radius:16px;border:1px solid var(--bd);background:var(--card);font-size:12px;cursor:pointer;white-space:nowrap}
 .hdr .rb button:hover{background:var(--pri-l);border-color:var(--pri);color:var(--pri)}
 
-/* 面板 */
 .pnl{position:fixed;top:52px;left:0;width:380px;bottom:0;z-index:900;background:var(--card);box-shadow:2px 0 12px rgba(0,0,0,.06);display:flex;flex-direction:column;transition:transform .3s}
 .pnl.hide{transform:translateX(-100%)}
 .pnl-tog{position:fixed;top:60px;left:380px;z-index:901;width:28px;height:48px;background:var(--card);border-radius:0 8px 8px 0;box-shadow:var(--sh);border:none;cursor:pointer;font-size:14px;color:var(--txt2);transition:left .3s}
@@ -27,7 +25,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .tab.on{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
 .body{flex:1;overflow-y:auto;padding:12px}
 
-/* 输入 */
 .grp{margin-bottom:12px}
 .grp label{display:block;font-size:12px;color:var(--txt2);margin-bottom:4px}
 .iwrap{display:flex;align-items:center;background:var(--bg);border-radius:8px;border:1px solid var(--bd);transition:border-color .2s}
@@ -37,20 +34,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .iwrap .xb{padding:4px 8px;cursor:pointer;color:var(--txt2);font-size:18px;display:none;flex-shrink:0;background:none;border:none}
 .iwrap .xb:hover{color:var(--err)}
 
-/* 按钮 */
 .b{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:8px 16px;border-radius:8px;border:none;font-size:14px;cursor:pointer;transition:all .2s;font-weight:500}
 .bp{background:var(--pri);color:#fff}.bp:hover{background:#0958d9}
 .bo{background:transparent;border:1px solid var(--bd);color:var(--txt)}.bo:hover{border-color:var(--pri);color:var(--pri)}
 .bs{padding:4px 10px;font-size:12px}
 .bk{width:100%}
 
-/* 出行方式 */
 .modes{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .mc{padding:6px 14px;border-radius:20px;border:1px solid var(--bd);font-size:13px;cursor:pointer;transition:all .2s;background:var(--card);user-select:none}
 .mc.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 .mc:hover:not(.on){border-color:var(--pri);color:var(--pri)}
 
-/* POI 卡 */
 .pc{padding:10px;border-radius:8px;border:1px solid var(--bd);margin-bottom:8px;cursor:pointer;transition:all .2s;background:var(--card)}
 .pc:hover{border-color:var(--pri);box-shadow:0 2px 8px rgba(22,119,255,.1)}
 .pc .pn{font-size:14px;font-weight:600;margin-bottom:2px}
@@ -58,7 +52,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .pc .pd{font-size:12px;color:var(--pri);margin-top:2px}
 .pc .pab{margin-top:6px;display:flex;gap:6px}
 
-/* 路线结果 */
 .rs{background:var(--pri-l);border-radius:8px;padding:12px;margin-bottom:12px}
 .rs .rt{font-size:24px;font-weight:700;color:var(--pri)}
 .rs .rd{font-size:14px;color:var(--txt2);margin-top:2px}
@@ -68,26 +61,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .step .st{font-size:13px;color:var(--txt);line-height:1.5}
 .step .sm{font-size:12px;color:var(--txt2)}
 
-/* 样式 */
 .sg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
 .si{padding:8px;border-radius:8px;border:2px solid var(--bd);text-align:center;cursor:pointer;font-size:12px;transition:all .2s}
 .si.on{border-color:var(--pri);color:var(--pri);background:var(--pri-l)}
 .si:hover{border-color:var(--pri)}
 
-/* 折叠 */
-.collapse-hd{font-size:13px;color:var(--txt2);cursor:pointer;margin:8px 0;display:flex;align-items:center;gap:4px;user-select:none;font-weight:500}
+.collapse-hd{font-size:13px;color:var(--txt2);cursor:pointer;margin:8px 0;display:flex;align-items:center;gap:4px;user-select:none;font-weight:500;padding:6px 0}
 .collapse-hd:hover{color:var(--pri)}
-.collapse-bd{overflow:hidden;max-height:0;transition:max-height .25s ease-out}
-.collapse-bd.show{max-height:500px}
+.collapse-bd{overflow:hidden;height:0;transition:height .25s ease-out}
+.collapse-bd.show{height:auto;overflow:visible}
 
-/* 模态 */
 .modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;z-index:2000;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center}
 .modal-bg.show{display:flex}
 .modal{background:var(--card);border-radius:12px;padding:20px;width:90%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.15)}
 .modal h3{font-size:16px;margin-bottom:12px}
 .modal textarea{width:100%;height:100px;border:1px solid var(--bd);border-radius:8px;padding:8px;font-size:13px;resize:none}
 
-/* Toast */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#333;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:3000;opacity:0;transition:all .3s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -96,13 +85,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 .loc-btn:hover{transform:scale(1.1)}
 
 .empty{text-align:center;padding:40px 20px;color:var(--txt2)}
-.empty .ei{font-size:48px;margin-bottom:12px}
-
 .pagi{display:flex;justify-content:center;gap:8px;margin-top:12px}
 .pagi button{padding:4px 12px;border-radius:6px;border:1px solid var(--bd);background:var(--card);cursor:pointer}
 .pagi button:disabled{opacity:.4;cursor:default}
 
-.ac{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--bd);border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);width:356px}
+.ac{position:fixed;z-index:1100;background:var(--card);border:1px solid var(--bd);border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)}
 .ac div{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--bg)}
 .ac div:hover{background:var(--pri-l)}
 
@@ -144,7 +131,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
     <div class="tab" data-t="style" onclick="switchTab('style')">样式</div>
   </div>
 
-  <!-- 路线 -->
   <div class="body" id="pRoute">
     <div class="modes">
       <div class="mc on" data-m="driving" onclick="setMode('driving')">驾车</div>
@@ -166,7 +152,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
     <div>
       <div class="collapse-hd" onclick="toggleC('adv')">▶ 高级选项</div>
       <div class="collapse-bd sel" id="adv">
-        <div id="dPolicy" style="display:none"><select id="dPolSel"><option value="0">最快</option><option value="1">最短</option><option value="2">少收费</option><option value="3">不走高速</option><option value="4">躲避拥堵</option></select></div>
+        <div id="dPolicy"><select id="dPolSel"><option value="0">最快</option><option value="1">最短</option><option value="2">少收费</option><option value="3">不走高速</option><option value="4">躲避拥堵</option></select></div>
         <div id="tPolicy" style="display:none"><select id="tPolSel"><option value="0">最快</option><option value="1">最少花费</option><option value="2">少步行</option><option value="3">最舒适</option><option value="4">不乘地铁</option></select></div>
       </div>
     </div>
@@ -174,7 +160,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
     <div id="routeRes" style="margin-top:12px"></div>
   </div>
 
-  <!-- 搜索 -->
   <div class="body" id="pSearch" style="display:none">
     <div class="grp"><label>搜索关键词</label>
       <div class="iwrap"><span class="ic">🔍</span><input id="kwIpt" placeholder="如：星巴克、停车场、景点" oninput="onAC('kw')"><button class="xb" onclick="clr('kw')">×</button></div>
@@ -193,7 +178,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
     <div id="searchRes" style="margin-top:12px"></div>
   </div>
 
-  <!-- 样式 -->
   <div class="body" id="pStyle" style="display:none">
     <p style="font-size:14px;margin-bottom:8px">选择地图样式</p>
     <div class="sg" id="styleGrid"></div>
@@ -222,13 +206,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 
 <script src="https://webapi.amap.com/loader.js"></script>
 <script>
-const KEY='d32b4be5e03b0b30b6fe6909be6d84f6',SKEY='';
-let A=null,map=null,ready=false,mode='driving',curStyle='normal',poiMks=[],acTmr=null;
+var KEY='d32b4be5e03b0b30b6fe6909be6d84f6',SKEY='';
+var A=null,map=null,ready=false,mode='driving',curStyle='normal',poiMks=[],acTmr=null;
+var myPos=null; // 当前位置坐标
 
-const STYLES=['normal','dark','light','whitesmoke','fresh','grey','graffiti','macaron','blue','darkblue','wine'];
-const SNAME={'normal':'标准','dark':'幻影黑','light':'月光银','whitesmoke':'远山黛','fresh':'草色青','grey':'雅士灰','graffiti':'涂鸦','macaron':'马卡龙','blue':'靛青蓝','darkblue':'极夜蓝','wine':'酱籽'};
+var STYLES=['normal','dark','light','whitesmoke','fresh','grey','graffiti','macaron','blue','darkblue','wine'];
+var SNAME={'normal':'标准','dark':'幻影黑','light':'月光银','whitesmoke':'远山黛','fresh':'草色青','grey':'雅士灰','graffiti':'涂鸦','macaron':'马卡龙','blue':'靛青蓝','darkblue':'极夜蓝','wine':'酱籽'};
 
-// 加载地图
+// ==================== 加载 ====================
 window.onload=function(){
   document.getElementById('mapBox').innerHTML='<div class="empty" style="padding-top:80px"><div class="spin" style="margin:0 auto 12px"></div><p>地图加载中...</p></div>';
   window._AMapSecurityConfig={securityJsCode:SKEY||''};
@@ -243,9 +228,31 @@ window.onload=function(){
   });
 };
 
-// 面板
+// ==================== Geocoder 地理编码（地名→坐标）====================
+function geocode(address){
+  return new Promise(function(resolve,reject){
+    if(!address){resolve(null);return}
+    // 如果已经是坐标格式 "lng,lat"，直接返回
+    var parts=address.split(',');
+    if(parts.length===2&&!isNaN(parseFloat(parts[0]))&&!isNaN(parseFloat(parts[1]))){
+      resolve(new A.LngLat(parseFloat(parts[0]),parseFloat(parts[1])));
+      return;
+    }
+    var geo=new A.Geocoder({city:'全国'});
+    geo.getLocation(address,function(status,result){
+      if(status==='complete'&&result.geocodes&&result.geocodes.length>0){
+        var loc=result.geocodes[0].location;
+        resolve(new A.LngLat(loc.lng,loc.lat));
+      }else{
+        reject(new Error('无法解析地址: '+address));
+      }
+    });
+  });
+}
+
+// ==================== 面板 ====================
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(function(e){e.classList.remove('on')});
   document.querySelector('.tab[data-t="'+t+'"]').classList.add('on');
   document.getElementById('pRoute').style.display=t==='route'?'block':'none';
   document.getElementById('pSearch').style.display=t==='search'?'block':'none';
@@ -257,7 +264,7 @@ function togPnl(){var p=document.getElementById('pnl'),b=document.getElementById
 // 出行方式
 function setMode(m){
   mode=m;
-  document.querySelectorAll('.mc').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.mc').forEach(function(e){e.classList.remove('on')});
   document.querySelector('.mc[data-m="'+m+'"]').classList.add('on');
   document.getElementById('wpSec').style.display=m==='driving'?'block':'none';
   document.getElementById('citySec').style.display=m==='transit'?'block':'none';
@@ -265,72 +272,89 @@ function setMode(m){
   document.getElementById('tPolicy').style.display=m==='transit'?'block':'none';
 }
 
-// 折叠
+// 折叠 — 用 height:auto 方案，彻底解决 display:none 子元素不计算高度的问题
 function toggleC(id){
-  var el=document.getElementById(id);if(!el)return;
-  var hd=el.previousElementSibling;
-  if(el.classList.toggle('show')){
-    if(hd)hd.textContent=hd.textContent.replace('▶','▼');
-  }else{
+  var bd=document.getElementById(id);if(!bd)return;
+  var hd=bd.previousElementSibling;
+  if(bd.classList.contains('show')){
+    bd.classList.remove('show');bd.style.height='0';
     if(hd)hd.textContent=hd.textContent.replace('▼','▶');
+  }else{
+    bd.classList.add('show');bd.style.height='auto';
+    if(hd)hd.textContent=hd.textContent.replace('▶','▼');
   }
 }
 
 // 途经点
 function addWP(){var l=document.getElementById('wpList'),i=l.children.length;if(i>=16){toast('最多16个途经点');return}var d=document.createElement('div');d.className='wp-row';d.innerHTML='<input type="text" placeholder="途经点'+(i+1)+'"><button class="del" onclick="this.parentElement.remove()">×</button>';l.appendChild(d)}
 
-// ==================== 路线规划 ====================
+// ==================== 路线规划（修复：先 geocode 再规划）====================
 function doRoute(){
   if(!ready){toast('地图尚未加载');return}
-  var from=document.getElementById('fromIpt').value.trim();
-  var to=document.getElementById('toIpt').value.trim();
-  if(!to){toast('请输入终点');return}
+  var fromStr=document.getElementById('fromIpt').value.trim();
+  var toStr=document.getElementById('toIpt').value.trim();
+  if(!toStr){toast('请输入终点');return}
   document.getElementById('routeRes').innerHTML='<div style="text-align:center;padding:12px"><div class="spin" style="margin:0 auto 8px"></div><div style="font-size:13px;color:var(--txt2)">路线规划中...</div></div>';
-  try{
-    if(mode==='driving')rDriv(from,to);
-    else if(mode==='walking')rWalk(from,to);
-    else if(mode==='riding')rRide(from,to);
-    else if(mode==='transit')rTrans(from,to);
-  }catch(e){console.error(e);document.getElementById('routeRes').innerHTML='';toast('规划出错: '+e.message)}
+
+  // 先把起点/终点/途经点全部 geocode
+  var tasks=[];
+  var fromPos=null,toPos=null,wpPositions=[];
+
+  // 起点
+  if(fromStr){
+    tasks.push(geocode(fromStr).then(function(p){fromPos=p}));
+  }
+  // 终点
+  tasks.push(geocode(toStr).then(function(p){toPos=p}));
+  // 途经点
+  var wpEls=document.querySelectorAll('.wp-row input');
+  wpEls.forEach(function(el){
+    var v=el.value.trim();
+    if(v) tasks.push(geocode(v).then(function(p){wpPositions.push(p)}));
+  });
+
+  Promise.all(tasks).then(function(){
+    if(!toPos){toast('无法解析终点地址');document.getElementById('routeRes').innerHTML='';return}
+    try{
+      if(mode==='driving') rDriv(fromPos,toPos,wpPositions);
+      else if(mode==='walking') rWalk(fromPos,toPos);
+      else if(mode==='riding') rRide(fromPos,toPos);
+      else if(mode==='transit') rTrans(fromPos,toPos);
+    }catch(e){console.error(e);document.getElementById('routeRes').innerHTML='';toast('规划出错: '+e.message)}
+  }).catch(function(e){
+    console.error(e);document.getElementById('routeRes').innerHTML='';toast('地址解析失败: '+e.message);
+  });
 }
 
-function rDriv(from,to){
-  var wpEls=document.querySelectorAll('.wp-row input');
-  var wps=[];wpEls.forEach(function(e){if(e.value.trim())wps.push(e.value.trim())});
+function rDriv(fromPos,toPos,wpPos){
   var pol=parseInt(document.getElementById('dPolSel').value);
-  var opts={map:map,policy:pol};
-  // JSAPI 2.0 Driving: waypoints 在 search 中传递
-  var driving=new A.Driving(opts);
-  var origin=from||undefined,destination=to;
-  if(wps.length>0){
-    driving.search(origin,destination,{waypoints:wps},function(s,r){onRouteDone(s,r,'driving')});
+  var driving=new A.Driving({map:map,policy:pol});
+  if(wpPos.length>0){
+    driving.search(fromPos,toPos,{waypoints:wpPos},function(s,r){onRouteDone(s,r,'driving')});
   }else{
-    driving.search(origin,destination,function(s,r){onRouteDone(s,r,'driving')});
+    driving.search(fromPos,toPos,function(s,r){onRouteDone(s,r,'driving')});
   }
 }
 
-function rWalk(from,to){var w=new A.Walking({map:map});w.search(from||undefined,to,function(s,r){onRouteDone(s,r,'walking')})}
-function rRide(from,to){var r=new A.Riding({map:map});r.search(from||undefined,to,function(s,r){onRouteDone(s,r,'riding')})}
-function rTrans(from,to){
+function rWalk(fromPos,toPos){var w=new A.Walking({map:map});w.search(fromPos,toPos,function(s,r){onRouteDone(s,r,'walking')})}
+function rRide(fromPos,toPos){var r=new A.Riding({map:map});r.search(fromPos,toPos,function(s,r){onRouteDone(s,r,'riding')})}
+function rTrans(fromPos,toPos){
   var city=document.getElementById('cityIpt').value.trim();
   if(!city){toast('公交模式请输入城市');document.getElementById('routeRes').innerHTML='';return}
   var pol=parseInt(document.getElementById('tPolSel').value);
   var t=new A.Transfer({map:map,city:city,policy:pol});
-  t.search(from||undefined,to,function(s,r){onRouteDone(s,r,'transit')});
+  t.search(fromPos,toPos,function(s,r){onRouteDone(s,r,'transit')});
 }
 
 function onRouteDone(status,result,type){
-  if(status==='complete'){renderRoute(result,type)}
+  if(status==='complete') renderRoute(result,type);
   else{document.getElementById('routeRes').innerHTML='';toast('路线规划失败')}
 }
 
 function renderRoute(result,type){
   var c=document.getElementById('routeRes'),dist=0,time=0,steps=[];
   try{
-    if(type==='driving'&&result.routes&&result.routes[0]){
-      var r=result.routes[0];dist=r.distance;time=r.time;
-      if(r.steps)r.steps.forEach(function(s){steps.push({ins:s.instruction,d:s.distance,t:s.time||0})});
-    }else if(type==='walking'&&result.routes&&result.routes[0]){
+    if((type==='driving'||type==='walking')&&result.routes&&result.routes[0]){
       var r=result.routes[0];dist=r.distance;time=r.time;
       if(r.steps)r.steps.forEach(function(s){steps.push({ins:s.instruction,d:s.distance,t:s.time||0})});
     }else if(type==='riding'&&result.routes&&result.routes[0]){
@@ -373,7 +397,7 @@ function doSearch(){
     });
   }else{
     ps.search(kw,city||undefined,function(s,r){
-      if(s==='complete'&&r.poiList)renderPOI(r.poiList);else{document.getElementById('searchRes').innerHTML='';toast('搜索失败')}
+      if(s==='complete'&&r.poiList)renderPOI(r.poiList);else{document.getElementById('searchRes').innerHTML='';toast('搜索失败：'+(r.message||'无结果'))}
     });
   }
 }
@@ -412,7 +436,7 @@ function initGrid(){
 function setStyle(s){if(!map)return;curStyle=s;map.setMapStyle('amap://styles/'+s);initGrid();toast('已切换: '+SNAME[s])}
 
 // 定位
-function locateMe(){if(!ready)return;try{var g=new A.Geolocation({enableHighAccuracy:true,timeout:10000});g.getCurrentPosition(function(s,r){if(s==='complete'){map.setCenter([r.position.lng,r.position.lat]);map.setZoom(15);toast('已定位')}else toast('定位失败')})}catch(e){}}
+function locateMe(){if(!ready)return;try{var g=new A.Geolocation({enableHighAccuracy:true,timeout:10000});g.getCurrentPosition(function(s,r){if(s==='complete'){myPos=[r.position.lng,r.position.lat];map.setCenter(myPos);map.setZoom(15);toast('已定位')}else toast('定位失败')})}catch(e){}}
 
 // 分享
 function openShare(){if(!map){toast('地图未加载');return}var c=map.getCenter(),z=map.getZoom();document.getElementById('shareTxt').value=location.origin+location.pathname+'?lng='+c.lng.toFixed(6)+'&lat='+c.lat.toFixed(6)+'&zoom='+z+'&style='+curStyle;document.getElementById('shareModal').classList.add('show')}
@@ -438,7 +462,6 @@ function onAC(type){
     })}catch(e){console.error(e)}
   },300);
 }
-
 function pickAC(iptid,name){document.getElementById(iptid).value=name;document.getElementById('acBox').style.display='none'}
 function clr(type){
   var id=type==='from'?'fromIpt':type==='to'?'toIpt':'kwIpt';
