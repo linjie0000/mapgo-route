@@ -118,6 +118,63 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 }
 .body::-webkit-scrollbar{width:4px}
 .body::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}
+
+/* 时间线样式 */
+.tl-stats{display:flex;gap:8px;margin-bottom:12px}
+.tl-stat{flex:1;background:var(--bg);border-radius:10px;padding:8px;text-align:center}
+.tl-stat .num{font-size:20px;font-weight:800}
+.tl-stat .lab{font-size:10px;color:var(--txt2)}
+.tl-chips{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tl-chip{padding:4px 10px;border-radius:14px;font-size:12px;font-weight:600;border:1px solid var(--bd);background:var(--card);cursor:pointer;transition:all .15s}
+.tl-chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.tl-chip:hover:not(.on){border-color:var(--pri);color:var(--pri)}
+.tl-form{margin-bottom:10px}
+.tl-form label{display:block;font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:4px}
+.tl-form input,.tl-form textarea{width:100%;border:1px solid var(--bd);border-radius:8px;padding:9px 12px;font-size:14px;outline:none;transition:border-color .15s;font-family:inherit}
+.tl-form input:focus,.tl-form textarea:focus{border-color:var(--pri)}
+.tl-form textarea{resize:vertical;min-height:40px}
+.tl-types{display:flex;gap:8px}
+.tl-type{flex:1;padding:8px;border:2px solid var(--bd);border-radius:8px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.tl-type.on[data-t=food]{border-color:var(--err);background:rgba(255,77,79,.08);color:var(--err)}
+.tl-type.on[data-t=scenic]{border-color:var(--pri);background:var(--pri-l);color:var(--pri)}
+.tl-type.on[data-t=hotel]{border-color:var(--warn);background:rgba(250,173,20,.08);color:var(--warn)}
+.tl-date-grp{margin-bottom:14px}
+.tl-date-lbl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:8px;cursor:pointer;padding:0 2px}
+.tl-date-lbl .arr{font-size:10px;transition:transform .2s}
+.tl-date-lbl .arr.collapsed{transform:rotate(-90deg)}
+.tl-card{background:var(--card);border-radius:10px;padding:12px;margin-bottom:6px;border-left:3px solid var(--pri);transition:all .15s}
+.tl-card.type-food{border-left-color:var(--err)}
+.tl-card.type-scenic{border-left-color:var(--pri)}
+.tl-card.type-hotel{border-left-color:var(--warn)}
+.tl-card.done{opacity:.6}
+.tl-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.tl-type-badge{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+.tl-type-badge.food{background:rgba(255,77,79,.08);color:var(--err)}
+.tl-type-badge.scenic{background:var(--pri-l);color:var(--pri)}
+.tl-type-badge.hotel{background:rgba(250,173,20,.08);color:var(--warn)}
+.tl-status{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;cursor:pointer;border:none}
+.tl-status.pending{background:rgba(250,173,20,.08);color:var(--warn)}
+.tl-status.completed{background:rgba(82,196,26,.08);color:var(--ok)}
+.tl-card-name{font-size:14px;font-weight:600}
+.tl-card-city{font-size:12px;color:var(--txt2)}
+.tl-card-note{font-size:12px;color:var(--txt2);margin-top:4px;font-style:italic}
+.tl-card-reason{font-size:11px;color:var(--err);margin-top:4px;font-style:italic;padding:4px 8px;background:rgba(255,77,79,.06);border-radius:4px}
+.tl-card-time{font-size:11px;color:var(--txt2);margin-top:2px}
+.tl-actions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+.tl-act{font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--card);cursor:pointer;color:var(--txt);transition:all .15s}
+.tl-act:hover{border-color:var(--pri);color:var(--pri)}
+.tl-act.del{color:var(--err);border-color:rgba(255,77,79,.3)}
+.tl-act.del:hover{background:rgba(255,77,79,.06)}
+.tl-act.done-act{color:var(--ok);border-color:rgba(82,196,26,.3)}
+.tl-act.done-act:hover{background:rgba(82,196,26,.06)}
+.tl-prog-bar{background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:6px;overflow:hidden}
+.tl-prog-track{position:relative;height:22px;background:var(--card);border-radius:4px;overflow:hidden}
+.tl-prog-block{position:absolute;top:0;height:100%;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px;transition:opacity .2s}
+.tl-prog-block.food{background:rgba(255,77,79,.15);color:var(--err)}
+.tl-prog-block.scenic{background:rgba(22,119,255,.15);color:var(--pri)}
+.tl-prog-block.hotel{background:rgba(250,173,20,.15);color:var(--warn)}
+.tl-prog-block.is-done{opacity:1}
+.tl-prog-block.not-done{opacity:.35}
 </style>
 </head>
 <body>
@@ -134,6 +191,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
     <div class="tab on" data-t="route" onclick="switchTab('route')">路线</div>
     <div class="tab" data-t="search" onclick="switchTab('search')">搜索</div>
     <div class="tab" data-t="hot" onclick="switchTab('hot')">热榜</div>
+    <div class="tab" data-t="tl" onclick="switchTab('tl')">时间线</div>
   </div>
 
   <div class="body" id="pRoute">
@@ -193,6 +251,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
     <div id="hotRes"></div>
   </div>
 
+  <!-- 时间线面板 -->
+  <div class="body" id="pTl" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:16px;font-weight:700">我的旅行时间线</div>
+      <div style="display:flex;gap:6px">
+        <button class="b bo bs" onclick="exportTl()">导出</button>
+        <button class="b bp bs" onclick="showTlAdd()">+ 添加</button>
+      </div>
+    </div>
+    <div id="tlStats" class="tl-stats" style="display:none"></div>
+    <div id="tlFilter" class="tl-chips" style="display:none"></div>
+    <div id="tlContent"><div class="empty"><div style="font-size:40px;margin-bottom:8px">📅</div><p>还没有旅行打卡计划</p><p style="font-size:12px;margin-top:4px">热榜搜索后添加，或手动创建</p></div></div>
+  </div>
+
 </div>
 
 <button class="pnl-tog" id="pnlTog" onclick="togPnl()">◀</button>
@@ -204,6 +276,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC
 <div class="modal-bg" id="shareModal">
   <div class="modal"><h3>分享当前地图</h3><textarea id="shareTxt" readonly></textarea>
     <div style="display:flex;gap:8px;margin-top:12px"><button class="b bp" onclick="copyShare()">复制</button><button class="b bo" onclick="closeShare()">关闭</button></div>
+  </div>
+</div>
+
+<!-- 时间线添加弹窗 -->
+<div class="modal-bg" id="tlAddModal">
+  <div class="modal" style="max-width:420px">
+    <h3>添加打卡计划</h3>
+    <div class="tl-form"><label>城市 *</label><input id="mCity" placeholder="如：成都"></div>
+    <div class="tl-form"><label>地点名称 *</label><input id="mName" placeholder="如：宽窄巷子"></div>
+    <div class="tl-form"><label>类型</label>
+      <div class="tl-types" id="mTypePicker">
+        <span class="tl-type on" data-t="food" onclick="pickTlType(this,'food')">🍜 美食</span>
+        <span class="tl-type" data-t="scenic" onclick="pickTlType(this,'scenic')">🎡 景点</span>
+        <span class="tl-type" data-t="hotel" onclick="pickTlType(this,'hotel')">🏨 酒店</span>
+      </div>
+    </div>
+    <div class="tl-form"><label>计划日期</label><input id="mDate" type="date"></div>
+    <div class="tl-form"><label>时间段（小时）</label><div style="display:flex;gap:8px;align-items:center"><input id="mStart" type="number" min="0" max="23" placeholder="开始" style="width:70px;text-align:center"><span style="color:var(--txt2)">—</span><input id="mEnd" type="number" min="0" max="23" placeholder="结束" style="width:70px;text-align:center"><span style="font-size:12px;color:var(--txt2)">时</span></div></div>
+    <div class="tl-form"><label>备注</label><textarea id="mNote" placeholder="写点什么..." rows="2"></textarea></div>
+    <div class="tl-form"><label>未完成原因（可选）</label><textarea id="mReason" placeholder="未能打卡原因..." rows="1"></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="b bp bk" onclick="saveTlAdd()">保存</button><button class="b bo bk" onclick="closeTlModal('tlAddModal')">取消</button></div>
+  </div>
+</div>
+
+<!-- 时间线编辑弹窗 -->
+<div class="modal-bg" id="tlEditModal">
+  <div class="modal" style="max-width:420px">
+    <h3>编辑打卡</h3>
+    <input type="hidden" id="eId">
+    <div class="tl-form"><label>城市</label><input id="eCity"></div>
+    <div class="tl-form"><label>地点名称</label><input id="eName"></div>
+    <div class="tl-form"><label>计划日期</label><input id="eDate" type="date"></div>
+    <div class="tl-form"><label>时间段（小时）</label><div style="display:flex;gap:8px;align-items:center"><input id="eStart" type="number" min="0" max="23" placeholder="开始" style="width:70px;text-align:center"><span style="color:var(--txt2)">—</span><input id="eEnd" type="number" min="0" max="23" placeholder="结束" style="width:70px;text-align:center"><span style="font-size:12px;color:var(--txt2)">时</span></div></div>
+    <div class="tl-form"><label>备注</label><textarea id="eNote" rows="2"></textarea></div>
+    <div class="tl-form"><label>未完成原因</label><textarea id="eReason" rows="1"></textarea></div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="b bp bk" onclick="saveTlEdit()">保存</button><button class="b bo bk" onclick="closeTlModal('tlEditModal')">取消</button></div>
   </div>
 </div>
 
@@ -316,8 +424,10 @@ function switchTab(t){
   document.getElementById('pRoute').style.display=t==='route'?'block':'none';
   document.getElementById('pSearch').style.display=t==='search'?'block':'none';
   document.getElementById('pHot').style.display=t==='hot'?'block':'none';
+  document.getElementById('pTl').style.display=t==='tl'?'block':'none';
   var p=document.getElementById('pnl');if(p.classList.contains('hide'))togPnl();
   if(t==='hot')initHotTags();
+  if(t==='tl')renderTl();
 }
 function togPnl(){var p=document.getElementById('pnl'),b=document.getElementById('pnlTog');p.classList.toggle('hide');b.textContent=p.classList.contains('hide')?'▶':'◀'}
 
@@ -723,8 +833,8 @@ function renderHotList(items,city,cat){
     h+='<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;margin-bottom:2px">'+esc(item.n)+'</div><div style="font-size:12px;color:var(--txt2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+esc(item.d)+'</div>';
     if(item.h)h+='<div style="font-size:10px;color:var(--pri);font-weight:600;margin-top:3px">'+esc(item.h)+'</div>';
     h+='</div>';
-    // 小红书/抖音按钮
-    h+='<div style="display:flex;gap:4px;flex-shrink:0;align-items:center"><button style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#FF2442;color:#fff;border:none;cursor:pointer;white-space:nowrap" onclick="event.stopPropagation();openXHS(\''+escAttr(city+item.n)+'\')">小红书</button><button style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#1A1A1A;color:#fff;border:none;cursor:pointer;white-space:nowrap" onclick="event.stopPropagation();openDY(\''+escAttr(city+item.n)+'\')">抖音</button></div>';
+    // 小红书/抖音/添加到时间线按钮
+    h+='<div style="display:flex;gap:4px;flex-shrink:0;align-items:center;flex-wrap:wrap"><button style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#FF2442;color:#fff;border:none;cursor:pointer;white-space:nowrap" onclick="event.stopPropagation();openXHS(\''+escAttr(city+item.n)+'\')">小红书</button><button style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;background:#1A1A1A;color:#fff;border:none;cursor:pointer;white-space:nowrap" onclick="event.stopPropagation();openDY(\''+escAttr(city+item.n)+'\')">抖音</button><button style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:600;background:var(--ok);color:#fff;border:none;cursor:pointer;white-space:nowrap" onclick="event.stopPropagation();addTlFromHot(\''+escAttr(city)+'\',\''+escAttr(item.n)+'\',\''+cat+'\')">+时间线</button></div>';
     h+='</div>';
   });
   return h;
@@ -926,10 +1036,302 @@ function clr(type){
 }
 document.addEventListener('click',function(e){if(!e.target.closest('.iwrap')&&!e.target.closest('.ac'))document.getElementById('acBox').style.display='none'});
 
+// ==================== 时间线 ====================
+var TL_KEY='travel_timeline_v2';
+var tlData=null; // 缓存
+var tlFilter='all'; // 当前筛选
+
+function loadTl(){
+  try{var s=localStorage.getItem(TL_KEY);tlData=s?JSON.parse(s):[]}catch(e){tlData=[]}
+  if(!Array.isArray(tlData))tlData=[];
+  return tlData;
+}
+function saveTl(){
+  localStorage.setItem(TL_KEY,JSON.stringify(tlData));
+}
+
+// 渲染时间线主面板
+function renderTl(){
+  var data=loadTl();
+  var statsEl=document.getElementById('tlStats');
+  var filterEl=document.getElementById('tlFilter');
+  var contentEl=document.getElementById('tlContent');
+
+  // 统计
+  var total=data.length;
+  var done=data.filter(function(x){return x.status==='done'}).length;
+  var pending=total-done;
+  if(total>0){
+    statsEl.style.display='flex';
+    statsEl.innerHTML='<div class="tl-stat"><div class="num">'+total+'</div><div class="lab">总计</div></div>'
+      +'<div class="tl-stat"><div class="num" style="color:var(--ok)">'+done+'</div><div class="lab">已打卡</div></div>'
+      +'<div class="tl-stat"><div class="num" style="color:var(--warn)">'+pending+'</div><div class="lab">待打卡</div></div>';
+  }else{
+    statsEl.style.display='none';
+  }
+
+  // 筛选条
+  if(total>0){
+    filterEl.style.display='flex';
+    var chips=[{k:'all',l:'全部'},{k:'food',l:'🍜 美食'},{k:'scenic',l:'🎡 景点'},{k:'hotel',l:'🏨 酒店'},{k:'pending',l:'待打卡'},{k:'done',l:'已打卡'}];
+    filterEl.innerHTML=chips.map(function(c){
+      return '<span class="tl-chip'+(tlFilter===c.k?' on':'')+'" onclick="filterTl(\''+c.k+'\')">'+c.l+'</span>';
+    }).join('');
+  }else{
+    filterEl.style.display='none';
+  }
+
+  // 筛选数据
+  var filtered=data;
+  if(tlFilter==='food'||tlFilter==='scenic'||tlFilter==='hotel'){
+    filtered=data.filter(function(x){return x.type===tlFilter});
+  }else if(tlFilter==='pending'){
+    filtered=data.filter(function(x){return x.status==='pending'});
+  }else if(tlFilter==='done'){
+    filtered=data.filter(function(x){return x.status==='done'});
+  }
+
+  // 按日期分组（降序）
+  var groups={};
+  filtered.forEach(function(item){
+    var d=item.date||'未设置日期';
+    if(!groups[d])groups[d]=[];
+    groups[d].push(item);
+  });
+  var dates=Object.keys(groups).sort(function(a,b){
+    if(a==='未设置日期')return 1;
+    if(b==='未设置日期')return -1;
+    return b.localeCompare(a);
+  });
+
+  if(total===0){
+    contentEl.innerHTML='<div class="empty"><div style="font-size:40px;margin-bottom:8px">📅</div><p>还没有旅行打卡计划</p><p style="font-size:12px;margin-top:4px">热榜搜索后添加，或手动创建</p></div>';
+    return;
+  }
+
+  if(filtered.length===0){
+    contentEl.innerHTML='<div class="empty" style="padding:30px 20px"><p>没有符合筛选条件的项目</p></div>';
+    return;
+  }
+
+  var h='';
+  dates.forEach(function(date){
+    var items=groups[date];
+    var dateDone=items.filter(function(x){return x.status==='done'}).length;
+    var dateTotal=items.length;
+    var pct=dateTotal>0?Math.round(dateDone/dateTotal*100):0;
+
+    h+='<div class="tl-date-grp">';
+    h+='<div class="tl-date-lbl" onclick="toggleTlDate(this)"><span class="arr">▼</span> '+esc(date)+' <span style="font-weight:400;font-size:12px;color:var(--txt3)">'+dateDone+'/'+dateTotal+' 完成 ('+pct+'%)</span></div>';
+
+    // 进度条
+    h+='<div class="tl-prog-bar"><div class="tl-prog-track">';
+    // 按时间段排序（有startTime的）
+    var sorted=items.slice().sort(function(a,b){
+      var ta=a.startTime||'99',tb=b.startTime||'99';
+      return ta.localeCompare(tb);
+    });
+    var trackWidth=100; // 百分比宽度
+    sorted.forEach(function(it){
+      var s=parseInt(it.startTime)||0,e=parseInt(it.endTime)||23;
+      var left=Math.round(s/24*trackWidth);
+      var width=Math.max(Math.round((e-s)/24*trackWidth),4);
+      var cls=it.type+(it.status==='done'?' is-done':' not-done');
+      h+='<div class="tl-prog-block '+cls+'" style="left:'+left+'%;width:'+width+'%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;padding:0 2px" title="'+esc(it.name)+'">'+esc(it.name)+'</div>';
+    });
+    h+='</div></div>';
+
+    // 卡片列表
+    h+='<div class="tl-date-items">';
+    sorted.forEach(function(item){
+      var typeBadge=itTypeLabel(item.type);
+      var statusCls=item.status==='done'?'completed':'pending';
+      var statusTxt=item.status==='done'?'已打卡':'待打卡';
+      var doneCls=item.status==='done'?' done':'';
+      h+='<div class="tl-card type-'+item.type+doneCls+'">';
+      h+='<div class="tl-card-top"><span class="tl-type-badge '+item.type+'">'+typeBadge+'</span><button class="tl-status '+statusCls+'" onclick="toggleTlStatus('+item.id+')">'+statusTxt+'</button></div>';
+      h+='<div class="tl-card-name">'+esc(item.name)+'</div>';
+      h+='<div class="tl-card-city">📍 '+esc(item.city)+'</div>';
+      if(item.note)h+='<div class="tl-card-note">'+esc(item.note)+'</div>';
+      if(item.status==='pending'&&item.reason)h+='<div class="tl-card-reason">原因: '+esc(item.reason)+'</div>';
+      if(item.startTime||item.endTime)h+='<div class="tl-card-time">⏰ '+((item.startTime||'?')+'时 - '+(item.endTime||'?')+'时')+'</div>';
+      h+='<div class="tl-actions">';
+      h+='<button class="tl-act" onclick="editTlItem('+item.id+')">编辑</button>';
+      h+='<button class="tl-act del" onclick="deleteTlItem('+item.id+')">删除</button>';
+      h+='</div>';
+      h+='</div>';
+    });
+    h+='</div></div>';
+  });
+
+  contentEl.innerHTML=h;
+}
+
+function itTypeLabel(t){return t==='food'?'🍜 美食':t==='scenic'?'🎡 景点':'🏨 酒店'}
+
+// 筛选
+function filterTl(f){
+  tlFilter=f;
+  renderTl();
+}
+
+// 日期折叠
+function toggleTlDate(el){
+  var arr=el.querySelector('.arr');
+  var items=el.parentElement.querySelector('.tl-date-items');
+  var prog=el.parentElement.querySelector('.tl-prog-bar');
+  if(arr.classList.contains('collapsed')){
+    arr.classList.remove('collapsed');
+    items.style.display='block';
+    if(prog)prog.style.display='block';
+  }else{
+    arr.classList.add('collapsed');
+    items.style.display='none';
+    if(prog)prog.style.display='none';
+  }
+}
+
+// 添加打卡弹窗
+function showTlAdd(city,name,type){
+  document.getElementById('mCity').value=city||'';
+  document.getElementById('mName').value=name||'';
+  // 重置类型选择
+  var picker=document.getElementById('mTypePicker');
+  var typeVal=type||'food';
+  picker.querySelectorAll('.tl-type').forEach(function(el){
+    el.classList.toggle('on',el.getAttribute('data-t')===typeVal);
+  });
+  document.getElementById('mDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('mStart').value='';
+  document.getElementById('mEnd').value='';
+  document.getElementById('mNote').value='';
+  document.getElementById('mReason').value='';
+  document.getElementById('tlAddModal').classList.add('show');
+}
+
+function pickTlType(el,t){
+  document.getElementById('mTypePicker').querySelectorAll('.tl-type').forEach(function(e){e.classList.remove('on')});
+  el.classList.add('on');
+}
+
+function saveTlAdd(){
+  var city=document.getElementById('mCity').value.trim();
+  var name=document.getElementById('mName').value.trim();
+  if(!city||!name){toast('请填写城市和地点名称');return}
+  var typeEl=document.getElementById('mTypePicker').querySelector('.tl-type.on');
+  var type=typeEl?typeEl.getAttribute('data-t'):'food';
+  var item={
+    id:Date.now(),
+    city:city,
+    name:name,
+    type:type,
+    date:document.getElementById('mDate').value||'',
+    startTime:document.getElementById('mStart').value||'',
+    endTime:document.getElementById('mEnd').value||'',
+    note:document.getElementById('mNote').value.trim(),
+    reason:document.getElementById('mReason').value.trim(),
+    status:'pending',
+    createdAt:new Date().toISOString()
+  };
+  loadTl();
+  tlData.push(item);
+  saveTl();
+  closeTlModal('tlAddModal');
+  renderTl();
+  toast('已添加: '+name);
+}
+
+// 编辑打卡
+function editTlItem(id){
+  loadTl();
+  var item=tlData.find(function(x){return x.id===id});
+  if(!item)return;
+  document.getElementById('eId').value=id;
+  document.getElementById('eCity').value=item.city||'';
+  document.getElementById('eName').value=item.name||'';
+  document.getElementById('eDate').value=item.date||'';
+  document.getElementById('eStart').value=item.startTime||'';
+  document.getElementById('eEnd').value=item.endTime||'';
+  document.getElementById('eNote').value=item.note||'';
+  document.getElementById('eReason').value=item.reason||'';
+  document.getElementById('tlEditModal').classList.add('show');
+}
+
+function saveTlEdit(){
+  var id=parseInt(document.getElementById('eId').value);
+  loadTl();
+  var item=tlData.find(function(x){return x.id===id});
+  if(!item)return;
+  item.city=document.getElementById('eCity').value.trim();
+  item.name=document.getElementById('eName').value.trim();
+  item.date=document.getElementById('eDate').value||'';
+  item.startTime=document.getElementById('eStart').value||'';
+  item.endTime=document.getElementById('eEnd').value||'';
+  item.note=document.getElementById('eNote').value.trim();
+  item.reason=document.getElementById('eReason').value.trim();
+  saveTl();
+  closeTlModal('tlEditModal');
+  renderTl();
+  toast('已更新: '+item.name);
+}
+
+// 切换打卡状态
+function toggleTlStatus(id){
+  loadTl();
+  var item=tlData.find(function(x){return x.id===id});
+  if(!item)return;
+  if(item.status==='done'){
+    item.status='pending';
+  }else{
+    item.status='done';
+  }
+  saveTl();
+  renderTl();
+  toast(item.status==='done'?'已打卡: '+item.name:'取消打卡: '+item.name);
+}
+
+// 删除打卡
+function deleteTlItem(id){
+  if(!confirm('确定删除这条打卡记录？'))return;
+  loadTl();
+  tlData=tlData.filter(function(x){return x.id!==id});
+  saveTl();
+  renderTl();
+  toast('已删除');
+}
+
+// 关闭弹窗
+function closeTlModal(mid){
+  document.getElementById(mid).classList.remove('show');
+}
+
+// 导出CSV
+function exportTl(){
+  loadTl();
+  if(tlData.length===0){toast('暂无数据可导出');return}
+  var header='城市,地点名称,类型,计划日期,开始时间,结束时间,备注,未完成原因,状态\n';
+  var rows=tlData.map(function(it){
+    return [it.city,it.name,itTypeLabel(it.type),it.date,it.startTime||'',it.endTime||'',it.note||'',it.reason||'',it.status==='done'?'已打卡':'待打卡'].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"'}).join(',');
+  });
+  var csv='\uFEFF'+header+rows.join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='旅行时间线_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('导出成功');
+}
+
+// 从热榜添加到时间线
+function addTlFromHot(city,name,type){
+  showTlAdd(city,name,type);
+}
+
 // 工具
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show')},2000)}
-function esc(s){return s.replace(/'/g,"\\'").replace(/"/g,'&quot;')}
-function escAttr(s){return s.replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+function esc(s){return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+function escAttr(s){return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 function restoreURL(){try{var p=new URLSearchParams(location.search),ln=parseFloat(p.get('lng')),la=parseFloat(p.get('lat')),z=parseInt(p.get('zoom')),s=p.get('style');if(ln&&la&&map)map.setCenter([ln,la]);if(z&&map)map.setZoom(z);if(s)setStyle(s)}catch(e){}}
 </script>
 </body>
